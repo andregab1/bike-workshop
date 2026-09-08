@@ -1,0 +1,1005 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WorkshopRole {
+  OWNER
+  MANAGER
+  ATTENDANT
+  MECHANIC
+  STOCKKEEPER
+}
+
+model User {
+  id               String           @id
+  name             String
+  email            String           @unique
+  emailVerified    Boolean          @default(false)
+  image            String?
+  activeWorkshopId String?
+  sessions         Session[]
+  accounts         Account[]
+  memberships      WorkshopMember[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  issuer                String
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([issuer, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model WorkshopMember {
+  id                 String                 @id @default(cuid())
+  workshopId         String
+  workshop           Workshop               @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  userId             String
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  role               WorkshopRole
+  active             Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  assignedWorkOrders WorkOrder[]            @relation("AssignedMechanic")
+  performedServices  WorkOrderServiceLine[] @relation("PerformedService")
+
+  @@unique([workshopId, userId])
+  @@index([workshopId, role, active])
+  @@index([userId, active])
+  @@map("workshop_members")
+}
+
+enum BikeType {
+  MTB
+  ROAD
+  GRAVEL
+  BMX
+  URBAN
+  E_BIKE
+  OTHER
+}
+
+enum InventoryUnit {
+  UNIT
+  METER
+  MILLILITER
+  GRAM
+}
+
+enum InventoryMovementType {
+  STOCK_ENTRY
+  STOCK_RESERVATION
+  RESERVATION_RELEASE
+  TRANSFER
+  INVENTORY_ADJUSTMENT
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  WORK_ORDER_USE
+  WORK_ORDER_REVERSAL
+  MANUAL_ADJUSTMENT
+  MANUAL_EXIT
+}
+
+enum ManualStockExitReason {
+  USO_INTERNO
+  PERDA
+  DANO
+  DEVOLUCAO
+  OUTRO
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkOrderPriority {
+  NORMAL
+  URGENT
+  WARRANTY_RETURN
+}
+
+enum WorkOrderDiscountType {
+  FIXED
+  PERCENT
+}
+
+enum WorkOrderLineStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkOrderChecklistType {
+  ENTRY
+  TECHNICAL
+  DELIVERY
+}
+
+enum WorkOrderChecklistResult {
+  PENDING
+  OK
+  ATTENTION
+  REJECTED
+  NOT_APPLICABLE
+}
+
+enum WorkOrderAttachmentType {
+  ENTRY
+  DIAGNOSIS
+  SERVICE
+  DAMAGE
+  DELIVERY
+  GENERAL
+}
+
+enum WorkSessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum WorkOrderActivityType {
+  CREATED
+  DIAGNOSIS_STARTED
+  DIAGNOSIS_UPDATED
+  ITEMS_UPDATED
+  DISCOUNT_CHANGED
+  SERVICE_STATUS_CHANGED
+  PART_STATUS_CHANGED
+  CHECKLIST_UPDATED
+  CHECKLIST_APPLIED
+  ATTACHMENT_ADDED
+  STATUS_CHANGED
+  EXECUTION_PAUSED
+  EXECUTION_RESUMED
+  STOCK_CONSUMED
+  STOCK_REVERSED
+  STOCK_RESERVED
+  STOCK_RELEASED
+  MECHANIC_ASSIGNED
+  QUOTE_CREATED
+  QUOTE_SENT
+  QUOTE_APPROVED
+  QUOTE_PARTIALLY_APPROVED
+  QUOTE_REJECTED
+  CUSTOMER_CONTACTED
+  PAYMENT_RECORDED
+  DELIVERED
+  CANCELLED
+}
+
+enum WorkOrderQuoteKind {
+  BASE
+  ADDITIONAL
+}
+
+enum QuoteApprovalStatus {
+  PENDING
+  PARTIALLY_APPROVED
+  APPROVED
+  REJECTED
+}
+
+enum ReservationPolicy {
+  ON_QUOTE_APPROVAL
+  ON_WORK_ORDER_START
+}
+
+enum InventoryReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
+enum WorkOrderQuoteStatus {
+  DRAFT
+  PENDING
+  PARTIALLY_APPROVED
+  APPROVED
+  REJECTED
+  SUPERSEDED
+  EXPIRED
+}
+
+enum ApprovalChannel {
+  IN_PERSON
+  WHATSAPP
+  PHONE
+  EMAIL
+  OTHER
+}
+
+enum PaymentOperationalStatus {
+  PENDING
+  PAID
+  WAIVED
+}
+
+enum DocumentType {
+  QUOTE
+  WORK_ORDER
+  PICKUP_RECEIPT
+}
+
+enum CommunicationStatus {
+  LINK_OPENED
+  MESSAGE_REQUESTED
+  MESSAGE_SENT
+  MESSAGE_FAILED
+}
+
+enum ContactChannel {
+  PHONE
+  WHATSAPP
+  EMAIL
+  OTHER
+}
+
+model Workshop {
+  id                             String                   @id @default(cuid())
+  authOrganizationId             String                   @unique
+  name                           String
+  slug                           String                   @unique
+  customers                      Customer[]
+  bikes                          Bike[]
+  serviceCatalogItems            ServiceCatalogItem[]
+  checklistTemplates             ChecklistTemplate[]
+  bikeChecklists                 BikeChecklist[]
+  checklistItemSuggestions       ChecklistItemSuggestion[]
+  inventoryItems                 InventoryItem[]
+  inventoryMovements             InventoryMovement[]
+  workOrders                     WorkOrder[]
+  workOrderCounter               WorkOrderCounter?
+  members                        WorkshopMember[]
+  legalName                      String?
+  taxId                          String?
+  address                        String?
+  phone                          String?
+  email                          String?
+  logoStorageKey                 String?
+  terms                          String?
+  reservationPolicy              ReservationPolicy        @default(ON_QUOTE_APPROVAL)
+  requirePaymentBeforeCompletion Boolean                  @default(false)
+  inventoryReservations          InventoryReservation[]
+  generatedDocuments             GeneratedDocument[]
+  communications                 WorkOrderCommunication[]
+  auditLogs                      AuditLog[]
+  createdAt                      DateTime                 @default(now())
+  updatedAt                      DateTime                 @updatedAt
+
+  @@map("workshops")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workshopId  String
+  workshop    Workshop @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  actorUserId String
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([workshopId, createdAt])
+  @@index([workshopId, entityType, entityId])
+  @@index([actorUserId, createdAt])
+  @@map("audit_logs")
+}
+
+model Brand {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  slug           String          @unique
+  website        String?
+  active         Boolean         @default(true)
+  parts          CatalogPart[]
+  inventoryItems InventoryItem[]
+
+  @@map("brands")
+}
+
+model PartCategory {
+  id            String         @id @default(cuid())
+  parentId      String?
+  parent        PartCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children      PartCategory[] @relation("CategoryTree")
+  name          String
+  slug          String         @unique
+  specSchemaKey String?
+  parts         CatalogPart[]
+  inventoryItems InventoryItem[]
+
+  @@index([parentId])
+  @@map("part_categories")
+}
+
+model CatalogPart {
+  id               String          @id @default(cuid())
+  brandId          String
+  brand            Brand           @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  categoryId       String
+  category         PartCategory    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name             String
+  model            String?
+  manufacturerCode String?
+  ean              String?
+  description      String?
+  aliases          String[]
+  specifications   Json
+  searchText       String
+  active           Boolean         @default(true)
+  inventoryItems   InventoryItem[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([manufacturerCode])
+  @@index([ean])
+  @@index([brandId, categoryId, active])
+  @@map("catalog_parts")
+}
+
+model InventoryItem {
+  id               String                 @id @default(cuid())
+  workshopId       String
+  workshop         Workshop               @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  catalogPartId    String?
+  catalogPart      CatalogPart?           @relation(fields: [catalogPartId], references: [id], onDelete: Restrict)
+  brandId          String?
+  brand            Brand?                 @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  categoryId       String?
+  category         PartCategory?          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  customName       String?
+  quantity         Decimal                @default(0) @db.Decimal(12, 3)
+  reservedQuantity Decimal                @default(0) @db.Decimal(12, 3)
+  minimumQuantity  Decimal                @default(0) @db.Decimal(12, 3)
+  unitOfMeasure    InventoryUnit          @default(UNIT)
+  costPriceCents   Int?
+  salePriceCents   Int
+  location         String?
+  sku              String?
+  ean              String?
+  supplierName     String?
+  notes            String?
+  imageStorageKey  String?
+  version          Int                    @default(1)
+  active           Boolean                @default(true)
+  movements        InventoryMovement[]
+  workOrderParts   WorkOrderPartLine[]
+  reservations     InventoryReservation[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([workshopId, active, customName])
+  @@index([workshopId, location, active])
+  @@index([workshopId, sku])
+  @@index([workshopId, ean])
+  @@index([workshopId, brandId, active])
+  @@index([workshopId, categoryId, active])
+  @@map("inventory_items")
+}
+
+model InventoryMovement {
+  id                 String                 @id @default(cuid())
+  workshopId         String
+  workshop           Workshop               @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  inventoryItemId    String
+  inventoryItem      InventoryItem          @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  type               InventoryMovementType
+  quantityDelta      Decimal                @db.Decimal(12, 3)
+  reason             String?
+  createdById        String
+  workOrderId        String?
+  workOrder          WorkOrder?             @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  originalMovementId String?
+  originalMovement   InventoryMovement?     @relation("MovementReversal", fields: [originalMovementId], references: [id], onDelete: Restrict)
+  reversals          InventoryMovement[]    @relation("MovementReversal")
+  supplierName       String?
+  purchaseDocument   String?
+  purchaseDate       DateTime?              @db.Date
+  unitCostCents      Int?
+  manualExitReason   ManualStockExitReason?
+  physicalBefore     Decimal?               @db.Decimal(12, 3)
+  physicalAfter      Decimal?               @db.Decimal(12, 3)
+  reservedBefore     Decimal?               @db.Decimal(12, 3)
+  reservedAfter      Decimal?               @db.Decimal(12, 3)
+  originDestination  String?
+  createdAt          DateTime               @default(now())
+
+  @@index([workshopId, createdAt])
+  @@index([inventoryItemId, createdAt])
+  @@index([workOrderId, type])
+  @@index([originalMovementId])
+  @@map("inventory_movements")
+}
+
+model ServiceCatalogItem {
+  id                       String                 @id @default(cuid())
+  workshopId               String
+  workshop                 Workshop               @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  name                     String
+  description              String?
+  priceCents               Int
+  category                 String?
+  estimatedDurationMinutes Int?
+  warrantyDays             Int?
+  active                   Boolean                @default(true)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  workOrderServices        WorkOrderServiceLine[]
+
+  @@index([workshopId, active, name])
+  @@index([workshopId, category, active])
+  @@map("service_catalog_items")
+}
+
+model ChecklistTemplate {
+  id          String                  @id @default(cuid())
+  workshopId  String
+  workshop    Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  name        String
+  description String?
+  active      Boolean                 @default(true)
+  items       ChecklistTemplateItem[]
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([workshopId, active, name])
+  @@map("checklist_templates")
+}
+
+model ChecklistTemplateItem {
+  id         String            @id @default(cuid())
+  templateId String
+  template   ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  section    String?
+  label      String
+  sortOrder  Int
+
+  @@unique([templateId, sortOrder])
+  @@index([templateId])
+  @@map("checklist_template_items")
+}
+
+model Customer {
+  id                      String          @id @default(cuid())
+  workshopId              String
+  workshop                Workshop        @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  name                    String
+  phone                   String
+  normalizedPhone         String
+  email                   String?
+  normalizedEmail         String?
+  notes                   String?
+  cpfCnpj                 String?
+  normalizedCpfCnpj       String?
+  postalCode              String?
+  street                  String?
+  number                  String?
+  complement              String?
+  neighborhood            String?
+  city                    String?
+  state                   String?
+  preferredContactChannel ContactChannel?
+  communicationConsent    Boolean         @default(false)
+  createdById             String?
+  active                  Boolean         @default(true)
+  bikes                   Bike[]
+  bikeChecklists          BikeChecklist[]
+  workOrderSnapshots      WorkOrder[]     @relation("WorkOrderCustomerSnapshot")
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  @@index([workshopId, active, name])
+  @@index([workshopId, phone])
+  @@index([workshopId, email])
+  @@index([workshopId, cpfCnpj])
+  @@index([workshopId, normalizedPhone])
+  @@index([workshopId, normalizedEmail])
+  @@index([workshopId, normalizedCpfCnpj])
+  @@map("customers")
+}
+
+model Bike {
+  id                 String                  @id @default(cuid())
+  workshopId         String
+  workshop           Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  customerId         String
+  customer           Customer                @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  brand              String
+  model              String
+  year               Int?
+  type               BikeType?
+  wheelSize          String?
+  frameSize          String?
+  color              String?
+  serialNumber       String?
+  notes              String?
+  active             Boolean                 @default(true)
+  workOrders         WorkOrder[]
+  bikeChecklists     BikeChecklist[]
+  ownershipTransfers BikeOwnershipTransfer[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([workshopId, active, brand, model])
+  @@index([workshopId, customerId, active])
+  @@index([workshopId, serialNumber])
+  @@map("bikes")
+}
+
+model BikeChecklist {
+  id         String              @id @default(cuid())
+  workshopId String
+  workshop   Workshop            @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  customerId String
+  customer   Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  bikeId     String
+  bike       Bike                @relation(fields: [bikeId], references: [id], onDelete: Restrict)
+  title      String
+  active     Boolean             @default(true)
+  createdById String
+  items      BikeChecklistItem[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([workshopId, active, updatedAt])
+  @@index([workshopId, bikeId, updatedAt])
+  @@map("bike_checklists")
+}
+
+model BikeChecklistItem {
+  id              String        @id @default(cuid())
+  checklistId     String
+  checklist       BikeChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  label           String
+  normalizedLabel String
+  checked         Boolean       @default(false)
+  sortOrder       Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([checklistId, normalizedLabel])
+  @@unique([checklistId, sortOrder])
+  @@map("bike_checklist_items")
+}
+
+model ChecklistItemSuggestion {
+  id              String   @id @default(cuid())
+  workshopId      String
+  workshop        Workshop @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  label           String
+  normalizedLabel String
+  useCount        Int      @default(1)
+  lastUsedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@unique([workshopId, normalizedLabel])
+  @@index([workshopId, lastUsedAt])
+  @@map("checklist_item_suggestions")
+}
+
+model WorkOrderCounter {
+  workshopId String   @id
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  nextNumber Int      @default(1001)
+
+  @@map("work_order_counters")
+}
+
+model WorkOrder {
+  id                    String                   @id @default(cuid())
+  workshopId            String
+  workshop              Workshop                 @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  bikeId                String
+  bike                  Bike                     @relation(fields: [bikeId], references: [id], onDelete: Restrict)
+  customerSnapshotId    String
+  customerSnapshot      Customer                 @relation("WorkOrderCustomerSnapshot", fields: [customerSnapshotId], references: [id], onDelete: Restrict)
+  number                Int
+  legacyKey             String?
+  status                WorkOrderStatus          @default(OPEN)
+  priority              WorkOrderPriority        @default(NORMAL)
+  complaint             String
+  internalNotes         String?
+  diagnosis             String                   @default("")
+  technicalRecommendations String?
+  technicalNotes        String?
+  expectedDate          DateTime?                @db.Date
+  expectedNote          String?
+  checklistSnapshot     Json?
+  laborSubtotalCents    Int                      @default(0)
+  partsSubtotalCents    Int                      @default(0)
+  totalCents            Int                      @default(0)
+  stockConsumed         Boolean                  @default(false)
+  version               Int                      @default(1)
+  assignedMechanicName  String?
+  assignedMechanicId    String?
+  assignedMechanic      WorkshopMember?          @relation("AssignedMechanic", fields: [assignedMechanicId], references: [id], onDelete: Restrict)
+  approvalStatus        QuoteApprovalStatus      @default(PENDING)
+  approvalNote          String?
+  approvalDecidedAt     DateTime?
+  approvalDecidedBy     String?
+  createdById           String
+  startedAt             DateTime?
+  diagnosisStartedAt    DateTime?
+  approvalRequestedAt   DateTime?
+  executionPausedAt     DateTime?
+  readyAt               DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  generalDiscountCents  Int                      @default(0)
+  generalDiscountType   WorkOrderDiscountType    @default(FIXED)
+  generalDiscountValue  Decimal                  @default(0) @db.Decimal(12, 4)
+  generalSurchargeCents Int                      @default(0)
+  paymentStatus         PaymentOperationalStatus @default(PENDING)
+  paidAmountCents       Int                      @default(0)
+  services              WorkOrderServiceLine[]
+  parts                 WorkOrderPartLine[]
+  inventoryMovements    InventoryMovement[]
+  activities            WorkOrderActivity[]
+  reservations          InventoryReservation[]
+  quotes                WorkOrderQuote[]
+  documents             GeneratedDocument[]
+  communications        WorkOrderCommunication[]
+  pickups               WorkOrderPickup[]
+  warranties            WorkOrderWarranty[]
+  checklists             WorkOrderChecklist[]
+  attachments            WorkOrderAttachment[]
+  workSessions           WorkOrderWorkSession[]
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  @@unique([workshopId, number])
+  @@unique([workshopId, legacyKey])
+  @@index([workshopId, customerSnapshotId])
+  @@index([workshopId, status, updatedAt])
+  @@index([workshopId, expectedDate])
+  @@index([workshopId, assignedMechanicId])
+  @@index([workshopId, priority, status])
+  @@index([bikeId, createdAt])
+  @@map("work_orders")
+}
+
+model WorkOrderServiceLine {
+  id                   String              @id @default(cuid())
+  workOrderId          String
+  workOrder            WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  serviceCatalogItemId String?
+  serviceCatalogItem   ServiceCatalogItem? @relation(fields: [serviceCatalogItemId], references: [id], onDelete: SetNull)
+  nameSnapshot         String
+  quantity             Decimal             @db.Decimal(12, 3)
+  unitPriceCents       Int
+  discountCents        Int                 @default(0)
+  surchargeCents       Int                 @default(0)
+  totalCents           Int                 @default(0)
+  status               WorkOrderLineStatus @default(PENDING)
+  completedAt          DateTime?
+  performedById        String?
+  performedBy          WorkshopMember?     @relation("PerformedService", fields: [performedById], references: [id], onDelete: Restrict)
+  warrantyDaysSnapshot Int?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @default(now()) @updatedAt
+
+  @@index([workOrderId])
+  @@map("work_order_service_lines")
+}
+
+model WorkOrderPartLine {
+  id               String        @id @default(cuid())
+  workOrderId      String
+  workOrder        WorkOrder     @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  inventoryItemId  String
+  inventoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  nameSnapshot     String
+  quantity         Decimal       @db.Decimal(12, 3)
+  unitPriceCents   Int
+  unitCostCents    Int?
+  locationSnapshot String?
+  discountCents    Int           @default(0)
+  surchargeCents   Int           @default(0)
+  totalCents       Int           @default(0)
+  status           WorkOrderLineStatus @default(PENDING)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+
+  @@index([workOrderId])
+  @@index([inventoryItemId])
+  @@map("work_order_part_lines")
+}
+
+model WorkOrderActivity {
+  id            String                @id @default(cuid())
+  workOrderId   String
+  workOrder     WorkOrder             @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  type          WorkOrderActivityType
+  title         String
+  description   String?
+  metadata      Json?
+  createdById   String
+  workshopId    String?
+  actorMemberId String?
+  ipAddress     String?
+  createdAt     DateTime              @default(now())
+
+  @@index([workOrderId, createdAt])
+  @@map("work_order_activities")
+}
+
+model WorkOrderChecklist {
+  id          String                 @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder              @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  type        WorkOrderChecklistType
+  title       String
+  required    Boolean                @default(false)
+  templateId  String?
+  createdById String
+  items       WorkOrderChecklistItem[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([workOrderId, type])
+  @@map("work_order_checklists")
+}
+
+model WorkOrderChecklistItem {
+  id             String                   @id @default(cuid())
+  checklistId    String
+  checklist      WorkOrderChecklist       @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  labelSnapshot  String
+  required       Boolean                  @default(false)
+  result         WorkOrderChecklistResult @default(PENDING)
+  notes          String?
+  verifiedById   String?
+  verifiedAt     DateTime?
+  sortOrder      Int
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@unique([checklistId, sortOrder])
+  @@index([checklistId, result])
+  @@map("work_order_checklist_items")
+}
+
+model WorkOrderAttachment {
+  id          String                  @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder               @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  type        WorkOrderAttachmentType @default(GENERAL)
+  storageKey  String
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  description String?
+  createdById String
+  createdAt   DateTime                @default(now())
+
+  @@index([workOrderId, type, createdAt])
+  @@map("work_order_attachments")
+}
+
+model WorkOrderWorkSession {
+  id          String            @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder         @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  serviceLineId String?
+  mechanicMemberId String
+  status      WorkSessionStatus @default(ACTIVE)
+  startedAt   DateTime          @default(now())
+  endedAt     DateTime?
+  createdById String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([workOrderId, status, startedAt])
+  @@index([mechanicMemberId, status])
+  @@map("work_order_work_sessions")
+}
+
+model BikeOwnershipTransfer {
+  id            String   @id @default(cuid())
+  bikeId        String
+  bike          Bike     @relation(fields: [bikeId], references: [id], onDelete: Restrict)
+  oldCustomerId String
+  newCustomerId String
+  changedById   String
+  changedAt     DateTime @default(now())
+  reason        String?
+
+  @@index([bikeId, changedAt])
+  @@map("bike_ownership_transfers")
+}
+
+model InventoryReservation {
+  id              String                     @id @default(cuid())
+  workshopId      String
+  workshop        Workshop                   @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  workOrderId     String
+  workOrder       WorkOrder                  @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  inventoryItemId String
+  inventoryItem   InventoryItem              @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  quantity        Decimal                    @db.Decimal(12, 3)
+  status          InventoryReservationStatus @default(ACTIVE)
+  expiresAt       DateTime?
+  createdById     String
+  releasedById    String?
+  releaseReason   String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([workshopId, status, expiresAt])
+  @@index([workOrderId, status])
+  @@index([inventoryItemId, status])
+  @@map("inventory_reservations")
+}
+
+model WorkOrderQuote {
+  id              String                   @id @default(cuid())
+  workOrderId     String
+  workOrder       WorkOrder                @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  version         Int
+  kind            WorkOrderQuoteKind       @default(BASE)
+  additionalNumber Int?
+  sourceWorkOrderVersion Int
+  status          WorkOrderQuoteStatus     @default(DRAFT)
+  validUntil      DateTime?                @db.Date
+  subtotalCents   Int
+  discountCents   Int                      @default(0)
+  surchargeCents  Int                      @default(0)
+  totalCents      Int
+  serviceSnapshot Json
+  partSnapshot    Json
+  createdById     String
+  sentAt          DateTime?
+  respondedAt     DateTime?
+  createdAt       DateTime                 @default(now())
+  approvals       WorkOrderQuoteApproval[]
+
+  @@unique([workOrderId, version])
+  @@index([workOrderId, status])
+  @@map("work_order_quotes")
+}
+
+model WorkOrderQuoteApproval {
+  id                   String               @id @default(cuid())
+  quoteId              String
+  quote                WorkOrderQuote       @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  approvedByName       String?
+  approvedByCustomerId String?
+  channel              ApprovalChannel
+  decision             WorkOrderQuoteStatus
+  evidence             String?
+  notes                String?
+  approvedServiceLineIds Json?
+  approvedPartLineIds    Json?
+  approvedAt           DateTime             @default(now())
+  recordedById         String
+
+  @@index([quoteId, approvedAt])
+  @@map("work_order_quote_approvals")
+}
+
+model GeneratedDocument {
+  id          String       @id @default(cuid())
+  workshopId  String
+  workshop    Workshop     @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  workOrderId String
+  workOrder   WorkOrder    @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  type        DocumentType
+  version     Int
+  storageKey  String
+  contentHash String
+  createdById String
+  createdAt   DateTime     @default(now())
+
+  @@unique([workOrderId, type, version])
+  @@index([workshopId, createdAt])
+  @@map("generated_documents")
+}
+
+model WorkOrderCommunication {
+  id              String              @id @default(cuid())
+  workshopId      String
+  workshop        Workshop            @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  workOrderId     String
+  workOrder       WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  channel         ContactChannel
+  status          CommunicationStatus
+  messageSnapshot String?
+  createdById     String
+  createdAt       DateTime            @default(now())
+
+  @@index([workshopId, createdAt])
+  @@index([workOrderId, createdAt])
+  @@map("work_order_communications")
+}
+
+model WorkOrderPickup {
+  id                  String    @id @default(cuid())
+  workOrderId         String
+  workOrder           WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  pickedUpByName      String
+  documentNumber      String?
+  relationship        String?
+  notes               String?
+  accepted            Boolean
+  signatureStorageKey String?
+  recordedById        String
+  pickedUpAt          DateTime  @default(now())
+
+  @@index([workOrderId, pickedUpAt])
+  @@map("work_order_pickups")
+}
+
+model WorkOrderWarranty {
+  id                  String    @id @default(cuid())
+  workOrderId         String
+  workOrder           WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  serviceLineId       String?
+  descriptionSnapshot String
+  warrantyDays        Int
+  startsAt            DateTime
+  expiresAt           DateTime
+  createdAt           DateTime  @default(now())
+
+  @@index([workOrderId, expiresAt])
+  @@map("work_order_warranties")
+}

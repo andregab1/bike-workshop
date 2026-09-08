@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ordem de serviço · BikeFlow</title>
+  <style>
+    :root{font-family:Inter,Arial,sans-serif;color:#172019;background:#eef1e9}*{box-sizing:border-box}body{margin:0}.toolbar{position:sticky;top:0;display:flex;justify-content:center;gap:10px;padding:12px;background:#172019;z-index:2}.toolbar button{border:0;border-radius:9px;padding:10px 16px;font-weight:750;cursor:pointer}.primary{background:#aff33e;color:#172019}.sheet{width:min(210mm,calc(100% - 28px));min-height:297mm;margin:20px auto;background:#fff;padding:15mm;box-shadow:0 15px 50px #17201922}.head{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #aff33e;padding-bottom:18px}.brand{font-size:25px;font-weight:900}.brand span{color:#669b0c}.muted{color:#657068}.number{text-align:right}.number b{font-size:27px}.status{display:inline-block;margin-top:7px;border:1px solid #ccd3c9;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.box{border:1px solid #dfe4dc;border-radius:12px;padding:13px}.label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#657068;font-weight:800}.box b{display:block;margin-top:5px}.section{margin-top:19px}.section h2{font-size:14px;margin:0 0 9px}.note{white-space:pre-wrap;line-height:1.5}.lines{width:100%;border-collapse:collapse;font-size:12px}.lines th,.lines td{padding:9px 7px;border-bottom:1px solid #e5e9e2;text-align:left}.lines th{background:#f2f5ef;text-transform:uppercase;font-size:9px;letter-spacing:.06em}.lines .num{text-align:right}.total{margin-left:auto;width:min(330px,100%);margin-top:15px}.total div{display:flex;justify-content:space-between;padding:6px}.total .grand{font-size:17px;font-weight:900;background:#efffd5;border-radius:8px;padding:10px}.approval{border-left:5px solid #aff33e}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:55px}.signature{border-top:1px solid #172019;text-align:center;padding-top:7px;font-size:11px}.footer{margin-top:35px;padding-top:12px;border-top:1px solid #e5e9e2;font-size:10px;color:#657068;text-align:center}.error{padding:40px;text-align:center;color:#a52323}@media(max-width:650px){.sheet{padding:20px}.grid,.signatures{grid-template-columns:1fr}}@media print{@page{size:A4;margin:0}body{background:#fff}.toolbar{display:none}.sheet{width:210mm;min-height:297mm;margin:0;box-shadow:none;padding:14mm}.page-break{break-before:page}}
+  </style>
+</head>
+<body>
+  <div class="toolbar"><button onclick="window.close()">Fechar</button><button class="primary" onclick="window.print()">Imprimir ou salvar em PDF</button></div>
+  <main class="sheet" id="document"><p class="muted">Preparando documento…</p></main>
+  <script src="/order-print.js"></script>
+</body>
+</html>

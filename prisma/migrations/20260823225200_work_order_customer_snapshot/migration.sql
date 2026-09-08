@@ -1,0 +1,1 @@
+-- Intentionally empty: the compatibility-safe backfill is part of the preceding migration.

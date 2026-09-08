@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BikeFlow — Redesign V2</title>
+<style>
+:root {
+  --card:#ffffff; --ring:#aff33e; --input:#e2e8f0; --muted:#f1f5f9; --accent:#f0fdf4;
+  --border:#e2e8f0; --radius:1rem; --chart-1:#aff33e; --chart-2:#334155; --chart-3:#22c55e;
+  --chart-4:#64748b; --chart-5:#94a3b8; --popover:#ffffff; --primary:#aff33e; --sidebar:#ffffff;
+  --spacing:.25rem; --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --font-sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --secondary:#334155; --background:#fbfcf8; --font-serif:Georgia,serif; --foreground:#0f172a;
+  --destructive:#ef4444; --shadow-blur:20px; --shadow-color:#000000; --sidebar-ring:#aff33e;
+  --shadow-spread:0px; --letter-spacing:-.01em; --shadow-opacity:.05; --sidebar-accent:#f8fafc;
+  --sidebar-border:#f1f5f9; --card-foreground:#0f172a; --shadow-offset-x:0px; --shadow-offset-y:8px;
+  --sidebar-primary:#aff33e; --muted-foreground:#64748b; --accent-foreground:#166534;
+  --popover-foreground:#0f172a; --primary-foreground:#000000; --sidebar-foreground:#0f172a;
+  --secondary-foreground:#f8fafc; --destructive-foreground:#ffffff; --sidebar-accent-foreground:#0f172a;
+  --sidebar-primary-foreground:#000000;
+  --primary-edge:#7fb829; --input-edge:#d7dccf;
+  --success:#16a34a; --success-soft:#f0fdf4; --warning:#d97706; --warning-soft:#fffbeb;
+  --danger-soft:#fef2f2;
+}
+.dark {
+  --card:#0f172a; --ring:#aff33e; --input:#1e293b; --muted:#1e293b; --accent:#14532d;
+  --border:#1e293b; --chart-1:#aff33e; --chart-2:#3b82f6; --chart-3:#22c55e; --chart-4:#a855f7;
+  --chart-5:#f59e0b; --popover:#0f172a; --primary:#aff33e; --sidebar:#020617;
+  --secondary:#1e293b; --background:#020617; --foreground:#f8fafc; --destructive:#991b1b;
+  --shadow-blur:25px; --shadow-color:#000000; --shadow-opacity:.4; --sidebar-accent:#1e293b;
+  --sidebar-border:#1e293b; --card-foreground:#f8fafc; --shadow-offset-y:10px;
+  --muted-foreground:#94a3b8; --accent-foreground:#aff33e; --popover-foreground:#f8fafc;
+  --primary-foreground:#000000; --sidebar-foreground:#f8fafc; --secondary-foreground:#f8fafc;
+  --destructive-foreground:#ffffff; --sidebar-accent-foreground:#f8fafc; --sidebar-primary-foreground:#000000;
+  --primary-edge:#678e25; --input-edge:#111827; --success-soft:#052e16; --warning-soft:#451a03; --danger-soft:#450a0a;
+}
+*{box-sizing:border-box}
+html{background:var(--background)}
+body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:14px;letter-spacing:var(--letter-spacing);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.app-loading .app{display:none}.app-status{min-height:100vh;display:grid;place-items:center;padding:24px;color:var(--muted-foreground);text-align:center}.app-status:empty{display:none}
+button,input,select,textarea{font:inherit;color:inherit} button{cursor:pointer} svg{display:block}
+.app{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr)}
+.sidebar{background:var(--sidebar);color:var(--sidebar-foreground);display:flex;flex-direction:column;padding:18px 14px;position:sticky;top:0;height:100vh;border-right:1px solid var(--sidebar-border);z-index:30}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 22px;border:0;background:transparent;text-align:left;width:100%;color:inherit;border-radius:12px}
+.brand:hover{background:var(--sidebar-accent)}
+.brand:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+.logo{width:40px;height:40px;border-radius:13px;background:var(--primary);display:grid;place-items:center;box-shadow:0 4px 0 var(--primary-edge);transition:transform .15s ease,box-shadow .15s ease}
+.logo svg{width:22px;height:22px;stroke:var(--primary-foreground);fill:none;stroke-width:1.8}
+.brand b{display:block;font-size:15px;font-weight:800;color:var(--sidebar-foreground)}
+.brand span{display:block;color:var(--muted-foreground);font-size:11px;margin-top:2px}
+.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-foreground);padding:15px 11px 7px;font-weight:800}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:12px;color:var(--muted-foreground);margin:2px 0;transition:background .15s ease,color .15s ease,transform .15s ease,box-shadow .15s ease}
+.nav-item:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.nav-item.active{background:var(--sidebar-primary);color:var(--sidebar-primary-foreground);box-shadow:0 4px 0 var(--primary-edge);transform:translateY(-1px);font-weight:750}
+.nav-item svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav-item .count{margin-left:auto;background:rgb(255 255 255 / .55);border:1px solid rgb(15 23 42 / .08);padding:2px 7px;border-radius:999px;font-size:11px;color:inherit}
+.dark .nav-item .count{background:rgb(0 0 0 / .2);border-color:rgb(255 255 255 / .08)}
+.sidebar-footer{margin-top:auto;border-top:1px solid var(--sidebar-border);padding-top:12px}.user{display:flex;align-items:center;gap:10px;padding:9px}.avatar{width:36px;height:36px;border-radius:12px;background:var(--muted);color:var(--foreground);display:grid;place-items:center;font-weight:800;border:1px solid var(--border)}.user small{display:block;color:var(--muted-foreground);margin-top:2px}
+.main{min-width:0}.topbar{height:70px;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid color-mix(in srgb,var(--border) 65%,transparent);display:flex;align-items:center;gap:12px;padding:0 28px;position:sticky;top:0;z-index:20}
+.global-search,.searchbox{display:flex;align-items:center;gap:9px;background:var(--muted);border:1px solid transparent;border-radius:1rem;box-shadow:0 4px 0 var(--input-edge);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease,background .2s ease;max-width:100%}
+.global-search{flex:1;max-width:560px;padding:0 13px;height:42px}.searchbox{height:40px;padding:0 12px;min-width:300px;max-width:460px;flex:1}
+.global-search:focus-within,.searchbox:focus-within{background:var(--card);border-color:var(--ring);box-shadow:0 4px 0 color-mix(in srgb,var(--primary) 38%,#aeb49f),0 0 0 3px rgb(175 243 62 / .20);transform:translateY(-1px)}
+.global-search input,.searchbox input{border:0!important;outline:0!important;background:transparent!important;width:100%;min-width:0;box-shadow:none!important;padding:0!important;color:var(--foreground)}
+.global-search input::placeholder,.searchbox input::placeholder,.field input::placeholder,.field textarea::placeholder,.textarea::placeholder{color:var(--muted-foreground)}
+.kbd{margin-left:auto;border:1px solid var(--border);background:var(--card);border-bottom-width:2px;border-radius:8px;padding:2px 7px;font-size:11px;color:var(--muted-foreground);font-family:var(--font-mono)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}.icon-btn,.btn{border:1px solid var(--border);background:var(--card);color:var(--foreground);border-radius:12px;height:39px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;font-weight:650;transition:background .15s ease,border-color .15s ease,transform .15s ease,filter .15s ease,box-shadow .15s ease}.icon-btn{width:39px;padding:0}.btn:hover,.icon-btn:hover{background:var(--muted);border-color:color-mix(in srgb,var(--border) 70%,var(--foreground))}.btn.ghost{border-color:transparent;background:transparent;color:var(--muted-foreground)}
+.btn.primary,.btn.success{background:var(--primary);color:var(--primary-foreground);border:0;border-bottom:4px solid var(--primary-edge);border-radius:12px;padding:0 20px;font-weight:800;box-shadow:none;transition:transform .15s ease,border-bottom-width .15s ease,filter .15s ease,background .15s ease}.btn.primary:hover,.btn.success:hover{background:var(--primary);filter:brightness(1.04);transform:translateY(-1px);border-bottom-width:6px}.btn.primary:active,.btn.success:active{filter:brightness(.92);transform:translateY(2px);border-bottom-width:2px}.btn.danger{color:var(--destructive);border-color:color-mix(in srgb,var(--destructive) 30%,var(--border));background:var(--card)}
+.page{padding:30px 32px 64px;display:none}.page.active{display:block}.page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:24px}.page-head h1{margin:0;font-size:30px;line-height:1.08;letter-spacing:-.04em;font-weight:820}.page-head p{margin:7px 0 0;color:var(--muted-foreground);font-size:13.5px}.page-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}.metric,.card,.panel,.stock-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) var(--shadow-spread) rgb(0 0 0 / var(--shadow-opacity))}.metric{padding:20px;min-height:148px}.metric .row{display:flex;align-items:center;justify-content:space-between}.metric .label{color:var(--muted-foreground);font-size:12px;font-weight:700}.metric .value{font-size:36px;font-weight:850;letter-spacing:-.05em;margin-top:14px;line-height:1}.metric .foot{color:var(--muted-foreground);font-size:12px;margin-top:10px}.metric:not(.alert):first-child .value,.metric:not(.alert):nth-child(3) .value{color:#65a30d}.metric.alert{background:var(--danger-soft);border-color:color-mix(in srgb,var(--destructive) 28%,var(--border))}.metric.alert .value{color:var(--destructive)}
+.section{margin-top:24px}.section-title{display:flex;align-items:center;gap:10px;margin-bottom:11px}.section-title h2{font-size:15px;margin:0}.section-title .sub{color:var(--muted-foreground);font-size:12px}.section-title .right{margin-left:auto}.work-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:18px}.work-list{overflow:hidden}.work-row{display:grid;grid-template-columns:95px minmax(0,1fr) 150px 110px 110px;align-items:center;padding:15px 17px;border-top:1px solid var(--border);gap:12px;transition:background .15s ease}.work-row:first-child{border-top:0}.work-row:hover{background:var(--sidebar-accent)}.os-no{font-weight:800;color:var(--foreground);font-family:var(--font-mono);font-size:12px}.item-title{font-weight:750}.item-sub{font-size:12px;color:var(--muted-foreground);margin-top:3px}.status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700}.dot{width:8px;height:8px;border-radius:99px;background:var(--chart-5)}.status.open .dot{background:#94a3b8}.status.progress .dot{background:var(--warning)}.status.ready .dot{background:var(--success)}.status.late{color:var(--destructive)}.status.late .dot{background:var(--destructive)}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:750;background:var(--muted);color:var(--muted-foreground);border:1px solid color-mix(in srgb,var(--border) 85%,transparent)}.pill.blue{background:var(--accent);color:var(--accent-foreground);border-color:rgb(175 243 62 / .35)}.pill.green{background:var(--accent);color:var(--accent-foreground);border-color:rgb(175 243 62 / .35)}.pill.amber{background:var(--warning-soft);color:var(--warning)}.pill.red{background:var(--danger-soft);color:var(--destructive)}
+.quick-card{padding:18px}.quick-list{display:grid;gap:10px;margin-top:2px}.quick-action{border:1px solid var(--border);background:var(--card);color:var(--foreground);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;text-align:left;transition:background .15s ease,border-color .15s ease,transform .15s ease}.quick-action:hover{border-color:var(--ring);background:var(--accent);transform:translateY(-1px)}.quick-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--primary);color:var(--primary-foreground);font-weight:850;box-shadow:0 3px 0 var(--primary-edge)}
+.toolbar{display:flex;align-items:center;gap:9px;margin-bottom:15px;flex-wrap:wrap}.selectlike{height:40px;border:1px solid var(--border);border-radius:12px;background:var(--card);padding:0 12px;color:var(--muted-foreground);font-weight:650}.segment{display:flex;padding:3px;background:var(--muted);border:1px solid var(--border);border-radius:12px;gap:3px}.segment button{border:0;background:transparent;padding:7px 10px;border-radius:9px;color:var(--muted-foreground);font-weight:650}.segment button.active{background:var(--card);color:var(--foreground);box-shadow:0 2px 6px rgb(0 0 0 / .05)}
+.toggle-field{height:40px;display:inline-flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-size:13px;font-weight:650;color:var(--muted-foreground);cursor:pointer}.toggle-field input{width:17px;height:17px;accent-color:var(--primary)}.part-library{grid-column:1/-1;border:1px solid var(--border);border-radius:12px;overflow:hidden}.part-library-head{padding:10px 12px;background:var(--muted);font-size:12px;font-weight:750;color:var(--muted-foreground)}.part-library-list{max-height:220px;overflow:auto}.part-library-option{width:100%;border:0;border-top:1px solid var(--border);background:var(--card);padding:10px 12px;text-align:left;color:var(--foreground);cursor:pointer}.part-library-option:hover,.part-library-option:focus-visible,.part-library-option.selected{background:var(--accent)}.audit-card{margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--muted);font-size:13px}
+.table{overflow:hidden}.table-row,.table-head{display:grid;grid-template-columns:90px minmax(230px,1.6fr) minmax(160px,1fr) 130px 120px 120px;gap:10px;align-items:center;padding:14px 17px}.table-head{background:var(--muted);color:var(--muted-foreground);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}.table-row{border-bottom:1px solid var(--border);min-height:64px}.table-row:last-child{border-bottom:0}.table-row:hover{background:var(--sidebar-accent)}.money{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}.stack{display:grid;gap:15px}.panel{overflow:hidden}.panel-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--card) 94%,var(--muted))}.panel-head h3{margin:0;font-size:14px}.panel-body{padding:17px 18px}.muted{color:var(--muted-foreground)}.label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-foreground);font-weight:800}.readonly-note{font-size:16px;line-height:1.58;margin-top:9px;color:var(--foreground)}
+.textarea,.field input,.field select,.field textarea{width:100%;max-width:100%;background:var(--muted);border:1px solid transparent;border-radius:1rem;color:var(--foreground);box-shadow:0 4px 0 var(--input-edge);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease,background .2s ease;outline:0}.textarea{min-height:112px;padding:13px 14px;resize:vertical}.field input,.field select{height:44px;padding:0 13px}.field textarea{min-height:96px;padding:12px 13px;resize:vertical}.textarea:focus,.field input:focus,.field select:focus,.field textarea:focus{background:var(--card);border-color:var(--ring);box-shadow:0 4px 0 color-mix(in srgb,var(--primary) 38%,#aeb49f),0 0 0 3px rgb(175 243 62 / .20);transform:translateY(-1px)}
+.line-head,.line-item{display:grid;grid-template-columns:1fr 70px 100px 100px 36px;gap:9px;align-items:center}.line-head{padding:10px 17px;background:var(--muted);color:var(--muted-foreground);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.line-item{padding:13px 17px;border-top:1px solid var(--border)}.line-item .num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono)}.line-add{padding:13px 17px;border-top:1px dashed var(--border);background:color-mix(in srgb,var(--muted) 45%,var(--card))}.stock-note{font-size:11px;color:var(--muted-foreground);margin-top:4px}.summary-list{display:grid;gap:11px}.summary-row{display:flex;justify-content:space-between;color:var(--muted-foreground)}.summary-row.total{padding:14px;margin:5px -4px -4px;background:var(--accent);border:1px solid rgb(175 243 62 / .4);border-radius:13px;font-size:20px;font-weight:850;color:var(--foreground)}.context{display:grid;gap:13px}.context-item{padding-bottom:13px;border-bottom:1px solid var(--border)}.context-item:last-child{border-bottom:0;padding-bottom:0}.context-item b{display:block;margin-top:5px}
+.inventory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.stock-card{padding:17px;transition:transform .15s ease,border-color .15s ease}.stock-card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}.stock-card.low{border-color:color-mix(in srgb,var(--warning) 30%,var(--border));background:var(--warning-soft)}.stock-card .top{display:flex;justify-content:space-between;gap:10px}.stock-card h4{margin:0;font-size:14px}.stock-card .meta{font-size:12px;color:var(--muted-foreground);margin-top:4px}.stock-card .q{font-size:30px;font-weight:850;margin-top:17px}.stock-card .bottom{display:flex;justify-content:space-between;align-items:end;margin-top:11px}.location{background:var(--muted);border:1px solid var(--border);border-radius:999px;padding:5px 8px;font-size:11px;color:var(--muted-foreground);font-family:var(--font-mono)}
+.catalog-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px}.filters{padding:17px}.filter-group{padding:14px 0;border-bottom:1px solid var(--border)}.filter-group:last-child{border-bottom:0}.filter-group h4{margin:0 0 10px;font-size:11px;text-transform:uppercase;color:var(--muted-foreground);letter-spacing:.08em}.check{display:flex;align-items:center;gap:9px;margin:8px 0;color:var(--foreground);cursor:pointer;user-select:none}.cbx{perspective:20px;display:inline-flex;width:24px;height:24px;border:2px solid var(--border);background:var(--muted);border-radius:7px;transform:translate3d(0,0,0);cursor:pointer;transition:border-color .3s ease,transform .3s ease;flex:none;padding:0}.cbx:hover{border-color:var(--primary);transform:translateY(-1px)}.cbx input{position:absolute;opacity:0;pointer-events:none}.flip{display:block;transition:transform .4s ease;transform-style:preserve-3d;position:relative;width:20px;height:20px}.cbx input:checked + .flip{transform:rotateY(180deg)}.front,.back{backface-visibility:hidden;position:absolute;inset:0;width:20px;height:20px;border-radius:5px}.front{background:var(--card);z-index:1}.back{transform:rotateY(180deg);background:var(--primary);display:grid;place-items:center;color:var(--primary-foreground);box-shadow:0 0 0 1px var(--primary)}.back svg{width:15px;height:13px;fill:none}.back svg path{stroke:var(--primary-foreground);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.catalog-list{overflow:hidden}.part-row{display:grid;grid-template-columns:1fr 160px 130px;gap:16px;align-items:center;padding:16px 18px;border-top:1px solid var(--border)}.part-row:first-child{border-top:0}.part-row:hover{background:var(--sidebar-accent)}.part-row h4{margin:0}.part-row .meta{color:var(--muted-foreground);font-size:12px;margin-top:4px}.tagrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.modal-wrap{position:fixed;inset:0;background:rgb(15 23 42 / .48);display:none;align-items:center;justify-content:center;z-index:99;padding:20px;backdrop-filter:blur(4px)}.modal-wrap.show{display:flex}.modal{width:min(640px,100%);max-height:calc(100dvh - 40px);display:flex;flex-direction:column;background:var(--popover);color:var(--popover-foreground);border:1px solid var(--border);border-radius:20px;box-shadow:0 28px 80px rgb(0 0 0 / .24);overflow:hidden}.modal-head{padding:21px 23px 13px;flex:none}.modal-head h2{margin:0;font-size:20px}.modal-head p{margin:7px 0 0;color:var(--muted-foreground);line-height:1.55}.modal-body{padding:10px 23px 23px;overflow-y:auto}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.form-grid .field:has(textarea){grid-column:1/-1}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:7px}.modal-foot{padding:14px 23px;background:var(--muted);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:9px;flex:none}.confirm-box{border:1px solid rgb(175 243 62 / .45);background:var(--accent);border-radius:14px;padding:14px;margin:12px 0}.stock-delta{display:grid;grid-template-columns:1fr 80px 80px;gap:8px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--primary) 28%,transparent)}.stock-delta:last-child{border-bottom:0}
+.toast-stack{position:fixed;right:22px;bottom:22px;z-index:150;display:grid;gap:10px;max-width:min(380px,calc(100vw - 28px))}.toast{background:var(--foreground);color:var(--background);padding:13px 16px;border-radius:13px;box-shadow:0 14px 40px rgb(0 0 0/.2);animation:toast-in .2s ease}.toast.error{background:var(--destructive);color:#fff}.toast.success{background:#166534;color:#fff}@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.is-hidden{display:none!important}.clickable{cursor:pointer}.field-error{display:block;color:var(--destructive);font-size:11px;margin-top:7px}.modal-wrap .invalid{border-color:var(--destructive)!important}
+.timeline{display:grid}.timeline-item{position:relative;padding:0 0 18px 25px}.timeline-item:last-child{padding-bottom:0}.timeline-item:before{content:"";position:absolute;left:6px;top:14px;bottom:-2px;width:1px;background:var(--border)}.timeline-item:last-child:before{display:none}.timeline-dot{position:absolute;left:0;top:3px;width:13px;height:13px;border-radius:50%;background:var(--primary);border:3px solid var(--card);box-shadow:0 0 0 1px var(--border)}.timeline-item b{display:block;font-size:13px}.timeline-item p{margin:4px 0;color:var(--muted-foreground);font-size:12px;line-height:1.45}.timeline-meta{font-size:10px;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+@media(max-width:1050px){.app{grid-template-columns:78px 1fr}.brand .txt,.nav-label,.nav-item span,.nav-item .count,.user .txt{display:none}.brand{justify-content:center;padding-inline:0}.nav-item{justify-content:center}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.work-grid,.split{grid-template-columns:1fr}.inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.app{grid-template-columns:1fr}.sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:50;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 8px;border-right:0;border-top:1px solid var(--sidebar-border);box-shadow:0 -12px 30px rgb(0 0 0 / .08)}.brand,.nav-label,.sidebar-footer,.nav-item:nth-of-type(n+6){display:none}.nav-item{margin:0;flex-direction:column;gap:3px;font-size:10px;padding:7px;box-shadow:none!important;transform:none!important}.nav-item span{display:block}.main{padding-bottom:76px}.topbar{padding:0 14px}.global-search{max-width:none}.top-actions .icon-btn{display:none}.top-actions .btn.primary{padding:0 12px;white-space:nowrap}.page{padding:19px 14px 34px}.page-head{align-items:flex-start;flex-direction:column}.page-head .actions{margin-left:0;width:100%}.page-head .actions .btn{max-width:100%}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.work-row{grid-template-columns:80px 1fr 95px}.work-row>:nth-child(3),.work-row>:nth-child(5){display:none}.table-head{display:none}.table-row{grid-template-columns:70px 1fr 100px!important;padding:14px}.table-row>:nth-child(3),.table-row>:nth-child(5),.table-row>:nth-child(6){display:none}.catalog-layout{grid-template-columns:1fr}.filters{display:block}.part-row{grid-template-columns:1fr}.inventory-grid{grid-template-columns:1fr}.searchbox{min-width:0;width:100%}.segment{max-width:100%;overflow:auto}.modal-wrap{padding:10px}.modal{max-height:calc(100dvh - 20px)}.form-grid{grid-template-columns:1fr}.modal-foot{flex-wrap:wrap}.modal-foot .btn{flex:1;min-width:130px}.line-head{display:none}.line-item{grid-template-columns:1fr 64px 36px}.line-item>:nth-child(3),.line-item>:nth-child(4){display:none}}
+@media(max-width:720px){.sidebar{display:flex;grid-template-columns:none;overflow-x:auto}.nav-item:nth-of-type(n+6){display:flex}.nav-item{flex:0 0 76px}.nav-item .count{display:none}}
+@media(max-width:720px){.discount-editor{grid-template-columns:1fr!important}}
+.inventory-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}.inventory-kpi{padding:16px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 94%,var(--primary)),var(--card))}.inventory-kpi span,.inventory-kpi small{display:block;color:var(--muted-foreground);font-size:11px}.inventory-kpi strong{display:block;margin:8px 0 4px;font-size:25px}.inventory-kpi.warning strong{color:var(--warning)}.inventory-kpi.danger strong{color:var(--destructive)}.stock-card.zero{border-color:color-mix(in srgb,var(--destructive) 50%,var(--border));background:var(--danger-soft)}.stock-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:16px 0}.stock-level{padding:9px;border-radius:10px;background:var(--muted);text-align:center}.stock-level span{display:block;color:var(--muted-foreground);font-size:10px}.stock-level b{display:block;margin-top:4px;font-size:17px}.stock-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.stock-status{font-size:10px;font-weight:800;text-transform:uppercase}.stock-status.normal{color:var(--primary)}.stock-status.low{color:var(--warning)}.stock-status.zero{color:var(--destructive)}.inventory-empty{grid-column:1/-1;padding:48px;text-align:center;color:var(--muted-foreground);border:1px dashed var(--border);border-radius:16px}.inventory-pagination{display:flex;justify-content:center;gap:8px;margin-top:18px}.stock-drawer-wrap{position:fixed;inset:0;z-index:110;background:rgb(2 8 23/.55);display:flex;justify-content:flex-end}.stock-drawer{width:min(480px,100%);height:100%;overflow:auto;background:var(--popover);border-left:1px solid var(--border);padding:24px;box-shadow:-24px 0 70px rgb(0 0 0/.3)}.drawer-head{display:flex;justify-content:space-between;gap:15px}.drawer-head h2{margin:0}.drawer-section{margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}.drawer-section h3{margin:0 0 12px;font-size:13px}.drawer-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.price-grid,.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.price-grid>div,.info-grid>div{padding:11px;background:var(--muted);border-radius:10px}.price-grid span,.info-grid span{display:block;color:var(--muted-foreground);font-size:10px;margin-bottom:4px}@media(max-width:1050px){.inventory-summary{grid-template-columns:repeat(3,1fr)}}@media(max-width:720px){.inventory-summary{grid-template-columns:repeat(2,1fr)}.inventory-kpi.value{grid-column:1/-1}.stock-drawer{padding:18px}}
+.work-order-hero{display:flex;align-items:flex-end;gap:18px;margin-bottom:18px}.work-order-hero>.actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.work-order-title{display:flex;align-items:center;gap:9px;margin-top:5px}.work-order-title h1{margin:0;font-size:30px;letter-spacing:-.04em}.work-order-hero p{margin:6px 0 0;color:var(--muted-foreground)}.save-state{font-size:11px;color:var(--ok)}.work-order-progress{display:grid;grid-template-columns:repeat(6,1fr);margin:0 0 15px;padding:14px 18px;border:1px solid var(--border);border-radius:16px;background:var(--card)}.progress-step{position:relative;display:grid;justify-items:center;gap:6px;text-align:center;color:var(--muted-foreground);font-size:10px}.progress-step:before{content:"";position:absolute;top:7px;left:-50%;right:50%;height:2px;background:var(--border)}.progress-step:first-child:before{display:none}.progress-dot{position:relative;z-index:1;width:16px;height:16px;border:3px solid var(--card);border-radius:50%;background:var(--border);box-shadow:0 0 0 1px var(--border)}.progress-step.done,.progress-step.current{color:var(--foreground);font-weight:750}.progress-step.done .progress-dot,.progress-step.current .progress-dot{background:var(--primary);box-shadow:0 0 0 1px var(--primary)}.progress-step.done:before{background:var(--primary)}.progress-step small{font-size:9px}.pending-card{display:flex;align-items:center;gap:15px;margin-bottom:15px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--warning) 55%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--warning) 10%,var(--card))}.pending-card p{margin:4px 0 0;color:var(--muted-foreground);font-size:12px}.pending-card .btn{margin-left:auto}.work-order-tabs{display:flex;gap:5px;overflow-x:auto;margin-bottom:15px;padding:4px;border:1px solid var(--border);border-radius:13px;background:var(--muted)}.work-order-tabs button{border:0;border-radius:9px;background:transparent;color:var(--muted-foreground);padding:9px 14px;font-weight:750;cursor:pointer;white-space:nowrap}.work-order-tabs button.active{background:var(--card);color:var(--foreground);box-shadow:0 1px 5px rgb(0 0 0/.15)}.work-order-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:17px;align-items:start}.work-order-sidebar{position:sticky;top:86px}.order-tab-panel{display:grid;gap:15px}.order-panel-total{margin-left:auto;font-weight:800}.order-line-head,.order-line{display:grid;grid-template-columns:minmax(180px,1.6fr) 120px 70px 90px 100px 105px 38px;gap:8px;align-items:center}.order-line-head{padding:10px 16px;background:var(--muted);color:var(--muted-foreground);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.order-line{padding:12px 16px;border-top:1px solid var(--border);font-size:12px}.order-line .num{text-align:right;font-family:var(--font-mono)}.order-line-status{font-size:10px;font-weight:800;text-transform:uppercase}.order-line-status.completed,.order-line-status.approved{color:var(--ok)}.order-line-status.rejected,.order-line-status.cancelled{color:var(--destructive)}.order-line-status.in_progress{color:var(--warning)}.order-empty{padding:25px;text-align:center;color:var(--muted-foreground)}.diagnosis-grid{display:grid;gap:8px}.diagnosis-grid label{font-size:12px;font-weight:800;margin-top:5px}.diagnosis-grid .textarea{min-height:115px}.quote-actions{margin-top:16px;flex-wrap:wrap}.quote-version{padding:13px;border:1px solid var(--border);border-radius:12px;background:var(--muted)}.quote-version-row{display:flex;justify-content:space-between;gap:10px}.checklist-block{margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden}.checklist-block-head{display:flex;justify-content:space-between;padding:11px 13px;background:var(--muted)}.checklist-row{display:grid;grid-template-columns:minmax(160px,1fr) 170px minmax(140px,1fr);gap:9px;padding:10px 13px;border-top:1px solid var(--border);align-items:center}.context-item.clickable:focus-visible{outline:2px solid var(--ring);outline-offset:4px}@media(max-width:1180px){.work-order-layout{grid-template-columns:1fr}.work-order-sidebar{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.order-line-head,.order-line{grid-template-columns:minmax(160px,1.5fr) 105px 58px 85px 90px 95px 34px}}@media(max-width:760px){.work-order-hero{align-items:flex-start;flex-direction:column}.work-order-hero>.actions{margin-left:0}.save-state{width:100%}.work-order-progress{overflow-x:auto;grid-template-columns:repeat(6,minmax(92px,1fr))}.work-order-layout{display:block}.work-order-sidebar{display:grid;grid-template-columns:1fr;margin-top:15px}.order-line-head{display:none}.order-line{grid-template-columns:1fr auto;gap:8px}.order-line>*{grid-column:auto!important}.order-line .mobile-wide{grid-column:1/-1!important}.checklist-row{grid-template-columns:1fr}.pending-card{align-items:flex-start}.pending-card .btn{margin-left:0}.work-order-title{flex-wrap:wrap}}
+.line-actions{display:flex;gap:5px;justify-content:flex-end}.line-actions .btn{padding:7px 8px;font-size:11px}.discount-control{display:grid;grid-template-columns:72px 1fr;gap:7px}.discount-control select,.discount-control input{min-width:0;height:38px;border:1px solid var(--border);border-radius:9px;background:var(--muted);color:var(--foreground);padding:0 9px}.discount-preview{font-size:10px;color:var(--muted-foreground);text-align:right}.summary-filter .order-tab-panel{display:grid}.order-tab-panel[data-order-panel="summary"]{order:1}.order-tab-panel[data-order-panel="diagnosis"]{order:2}.order-tab-panel[data-order-panel="checklist"]{order:3}.order-tab-panel[data-order-panel="quote"]{order:4}.order-tab-panel[data-order-panel="execution"]{order:5}.order-tab-panel[data-order-panel="history"]{order:6}
+.summary-filter .order-tab-panel.is-hidden{display:grid!important}
+</style>
+<link rel="stylesheet" href="/inventory.css"/>
+</head>
+<body class="app-loading">
+<div id="app-status" class="app-status" role="status">Carregando dados da oficina…</div>
+<div class="app">
+  <aside class="sidebar">
+    <button type="button" class="brand" data-page-link="dashboard" aria-label="Ir para a página inicial do BikeFlow">
+      <div class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="4"/><circle cx="18" cy="17" r="4"/><path d="M6 17l5-10h4l3 10M10.5 8H16M12 17l3-10"/></svg></div>
+      <div class="txt"><b>BikeFlow</b><span>Oficina Pedal Forte</span></div>
+    </button>
+
+    <div class="nav-label">Operação</div>
+    <div class="nav-item active" data-page="dashboard"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>Oficina</span></div>
+    <div class="nav-item" data-page="orders"><svg viewBox="0 0 24 24"><path d="M7 4h10v3H7zM5 6h14v15H5zM8 11h8M8 15h5"/></svg><span>Ordens de serviço</span><span class="count">18</span></div>
+    <div class="nav-item" data-page="customers"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2M16 5a3 3 0 0 1 0 6M18 14a4 4 0 0 1 3 4v2"/></svg><span>Clientes</span></div>
+    <div class="nav-item" data-page="inventory"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10"/></svg><span>Estoque</span></div>
+    <div class="nav-item" data-page="team"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3 20v-2a5 5 0 0 1 10 0v2M14 20v-1a4 4 0 0 1 7 0v1"/></svg><span>Equipe</span></div>
+
+    <div class="nav-label">Catálogos</div>
+    <div class="nav-item" data-page="catalog"><svg viewBox="0 0 24 24"><path d="M5 4h13a2 2 0 0 1 2 2v14H7a3 3 0 0 1-3-3V5a1 1 0 0 1 1-1zM7 4v13a3 3 0 0 0-3 0M10 8h6M10 12h5"/></svg><span>Catálogo de peças</span></div>
+    <div class="nav-item" data-page="services"><svg viewBox="0 0 24 24"><path d="M14 7l3-3 3 3-3 3M4 20l8-8M10 4a6 6 0 0 1 6 6"/></svg><span>Serviços</span></div>
+    <div class="nav-item" data-page="checklists"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 9l2 2 4-4M8 15h8"/></svg><span>Checklists</span></div>
+
+    <div class="sidebar-footer">
+      <div class="user"><div class="avatar">RD</div><div class="txt"><b>Rafael Duarte</b><small>Proprietário</small></div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="global-search"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg><input placeholder="Buscar cliente, bike, OS ou peça..."/><span class="kbd">Ctrl K</span></div>
+      <button class="btn inventory-scan" id="inventory-scan" type="button" hidden><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 8v8M11 7v10M14 8v8M17 7v10"/></svg>Escanear código</button>
+      <div class="top-actions"><button class="icon-btn" aria-label="Ajuda">?</button><button class="icon-btn" aria-label="Configurações">⚙</button><button class="btn primary" id="context-primary-action" type="button">+ Nova OS</button></div>
+    </div>
+
+    <section class="page active" id="dashboard">
+      <div class="page-head">
+        <div><h1>Oficina</h1><p>Sexta-feira, 21 de agosto · visão rápida do que exige sua atenção.</p></div>
+        <div class="actions"><button class="btn primary" onclick="openModal('new-order')">+ Nova ordem de serviço</button></div>
+      </div>
+
+      <div class="grid-4">
+        <div class="metric"><div class="row"><span class="label">Abertas</span><span class="pill blue">entrada</span></div><div class="value">7</div><div class="foot">aguardando início</div></div>
+        <div class="metric"><div class="row"><span class="label">Em serviço</span><span class="pill amber">bancada</span></div><div class="value">4</div><div class="foot">trabalho em andamento</div></div>
+        <div class="metric"><div class="row"><span class="label">Prontas</span><span class="pill green">finalizadas</span></div><div class="value">3</div><div class="foot">aguardando retirada</div></div>
+        <div class="metric alert"><div class="row"><span class="label">Atrasadas</span><span class="pill red">atenção</span></div><div class="value">2</div><div class="foot">prazo já vencido</div></div>
+      </div>
+
+      <div class="section work-grid">
+        <div>
+          <div class="section-title"><h2>Prioridade agora</h2><span class="sub">ordens em serviço e atrasadas</span><span class="right"><button class="btn ghost" data-page-link="orders">Ver todas →</button></span></div>
+          <div class="card work-list">
+            <div class="work-row" onclick="showPage('order-detail')">
+              <div class="os-no">#1042</div><div><div class="item-title">Sense Impact Pro 29</div><div class="item-sub">Carlos Silva · marcha pulando e freio fraco</div></div><div><span class="status progress"><span class="dot"></span>Em serviço</span></div><div class="item-sub">Hoje</div><div class="money">R$ 245</div>
+            </div>
+            <div class="work-row">
+              <div class="os-no">#1040</div><div><div class="item-title">Trek Marlin 7</div><div class="item-sub">Pedro Almeida · revisão completa</div></div><div><span class="status late"><span class="dot"></span>Atrasada</span></div><div class="item-sub">Ontem</div><div class="money">R$ 420</div>
+            </div>
+            <div class="work-row">
+              <div class="os-no">#1041</div><div><div class="item-title">Soul SL 129</div><div class="item-sub">Marcos Toledo · barulho na suspensão</div></div><div><span class="status progress"><span class="dot"></span>Em serviço</span></div><div class="item-sub">Hoje</div><div class="money">R$ 190</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title"><h2>Ações rápidas</h2></div>
+          <div class="card quick-card">
+            <div class="quick-list">
+              <button class="quick-action" onclick="openModal('new-order')"><span class="quick-icon">＋</span><span><b>Nova OS</b><div class="item-sub">entrada de uma nova bike</div></span></button>
+              <button class="quick-action"><span class="quick-icon">↥</span><span><b>Entrada de estoque</b><div class="item-sub">registrar peças que chegaram</div></span></button>
+              <button class="quick-action" data-page-link="catalog"><span class="quick-icon">⌕</span><span><b>Buscar peça</b><div class="item-sub">consultar o catálogo técnico</div></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="orders">
+      <div class="page-head"><div><h1>Ordens de serviço</h1><p>18 ordens ativas · organização por trabalho, não por burocracia.</p></div><div class="actions"><button class="btn primary" onclick="openModal('new-order')">+ Nova OS</button></div></div>
+      <div class="toolbar">
+        <label class="toggle-field" for="show-rejected-orders"><input type="checkbox" id="show-rejected-orders"/> Mostrar recusadas</label>
+        <div class="searchbox">⌕ <input placeholder="Buscar por OS, cliente ou bike..."/></div>
+        <div class="segment"><button class="active">Ativas 18</button><button>Prontas 3</button><button>Finalizadas</button></div>
+        <button class="selectlike">Status ▾</button><button class="selectlike">Prazo ▾</button>
+      </div>
+      <div class="card table">
+        <div class="table-head"><div>OS</div><div>Bike</div><div>Cliente</div><div>Status</div><div>Previsão</div><div style="text-align:right">Total</div></div>
+        <div class="table-row" onclick="showPage('order-detail')"><div class="os-no">#1042</div><div><b>Sense Impact Pro 29</b><div class="item-sub">MTB · aro 29</div></div><div>Carlos Silva</div><div><span class="status progress"><span class="dot"></span>Em serviço</span></div><div>Hoje</div><div class="money">R$ 245</div></div>
+        <div class="table-row"><div class="os-no">#1040</div><div><b>Trek Marlin 7</b><div class="item-sub">MTB · aro 29</div></div><div>Pedro Almeida</div><div><span class="status late"><span class="dot"></span>Atrasada</span></div><div style="color:var(--destructive)">Ontem</div><div class="money">R$ 420</div></div>
+        <div class="table-row"><div class="os-no">#1041</div><div><b>Soul SL 129</b><div class="item-sub">MTB · aro 29</div></div><div>Marcos Toledo</div><div><span class="status progress"><span class="dot"></span>Em serviço</span></div><div>Hoje</div><div class="money">R$ 190</div></div>
+        <div class="table-row"><div class="os-no">#1043</div><div><b>Caloi Elite Carbon</b><div class="item-sub">MTB · aro 29</div></div><div>Bruno Reis</div><div><span class="status open"><span class="dot"></span>Aberta</span></div><div>Segunda</div><div class="money">—</div></div>
+      </div>
+    </section>
+
+    <section class="page" id="order-detail">
+      <div class="work-order-hero">
+        <div><div class="label">Ordem de serviço</div><div class="work-order-title"><h1 id="order-number">OS</h1><span class="pill" id="order-status">Aberta</span><span class="pill" id="order-priority">Normal</span></div><p id="order-identity">Carregando cliente e bicicleta…</p></div>
+        <div class="actions"><span class="save-state" id="order-save-state" role="status">Todas as alterações salvas</span><button class="btn" id="whatsapp-order">WhatsApp</button><button class="btn" id="print-order">Imprimir / PDF</button><button class="btn" id="order-more" aria-label="Mais ações da OS">•••</button><button class="btn success" id="order-primary-action">Continuar</button></div>
+      </div>
+
+      <div class="work-order-progress" id="order-progress" aria-label="Progresso da ordem de serviço"></div>
+      <div class="pending-card is-hidden" id="order-pendings"><div><b id="pending-count">Sem pendências</b><p id="pending-summary"></p></div><button class="btn" id="view-pendings">Ver pendências</button></div>
+      <div class="work-order-tabs" role="tablist" aria-label="Seções da ordem de serviço">
+        <button class="active" role="tab" data-order-tab="summary">Resumo</button><button role="tab" data-order-tab="diagnosis">Diagnóstico</button><button role="tab" data-order-tab="quote">Orçamento</button><button role="tab" data-order-tab="execution">Execução</button><button role="tab" data-order-tab="checklist">Checklist</button><button role="tab" data-order-tab="history">Histórico</button>
+      </div>
+
+      <div class="work-order-layout">
+        <div class="stack summary-filter" id="order-content">
+          <div class="order-tab-panel" data-order-panel="summary">
+            <div class="panel"><div class="panel-head"><h3>Relato do cliente</h3></div><div class="panel-body"><div class="readonly-note" id="order-complaint"></div><div class="item-sub" id="complaint-meta"></div></div></div>
+            <div class="panel order-lines" id="order-services-panel"><div class="panel-head"><h3>Serviços</h3><span class="order-panel-total">R$ 0,00</span></div><div class="order-line-head"><span>Serviço</span><span>Status</span><span>Qtd.</span><span>Unit.</span><span>Desconto</span><span>Total</span><span></span></div><div class="order-lines-body"></div><div class="line-add"><button class="btn primary">+ Adicionar serviço</button></div></div>
+            <div class="panel order-lines" id="order-parts-panel"><div class="panel-head"><h3>Peças</h3><span class="order-panel-total">R$ 0,00</span></div><div class="order-line-head"><span>Peça</span><span>Disponível</span><span>Status</span><span>Qtd.</span><span>Unit.</span><span>Total</span><span></span></div><div class="order-lines-body"></div><div class="line-add"><button class="btn primary">+ Adicionar peça</button></div></div>
+          </div>
+
+          <div class="order-tab-panel is-hidden" data-order-panel="diagnosis">
+            <div class="panel"><div class="panel-head"><h3>Diagnóstico técnico</h3><span class="pill blue">Área do mecânico</span></div><div class="panel-body diagnosis-grid"><label for="order-diagnosis">Diagnóstico</label><textarea class="textarea" id="order-diagnosis"></textarea><label for="order-recommendations">Problemas encontrados e recomendações</label><textarea class="textarea" id="order-recommendations"></textarea><label for="order-technical-notes">Observações internas</label><textarea class="textarea" id="order-technical-notes"></textarea><div class="item-sub" id="diagnosis-save-state" role="status">Todas as alterações salvas</div></div></div>
+            <div class="panel"><div class="panel-head"><h3>Fotos e anexos</h3><button class="btn" id="add-order-attachment" type="button">Adicionar anexo</button></div><div class="panel-body" id="order-attachments"><span class="muted">Nenhum anexo registrado.</span></div></div>
+          </div>
+
+          <div class="order-tab-panel is-hidden" data-order-panel="quote">
+            <div class="panel" id="quote-approval-panel"><div class="panel-head"><h3>Orçamento</h3><span class="pill">Rascunho</span></div><div class="panel-body"><div id="quote-versions" class="stack"></div><div class="actions quote-actions"><button class="btn" id="generate-quote">Gerar nova versão</button><button class="btn" id="send-quote">Registrar envio</button><button class="btn" id="reject-quote">Registrar recusa</button><button class="btn" id="partial-approve-quote">Aprovação parcial</button><button class="btn success" id="approve-quote">Registrar aprovação</button></div></div></div>
+          </div>
+
+          <div class="order-tab-panel is-hidden" data-order-panel="execution">
+<div class="panel"><div class="panel-head"><h3>Execução</h3><span class="pill" id="execution-state">Não iniciada</span></div><div class="panel-body"><div class="actions"><button class="btn success" id="start-execution">Iniciar execução</button><button class="btn" id="pause-execution">Pausar</button><button class="btn primary" id="resume-execution">Retomar</button></div><div class="item-sub" id="execution-summary"></div></div></div>
+            <div class="panel"><div class="panel-head"><h3>Serviços aprovados</h3></div><div class="panel-body" id="execution-services"></div></div>
+          </div>
+
+          <div class="order-tab-panel is-hidden" data-order-panel="checklist">
+            <div class="panel" id="order-checklist-panel"><div class="panel-head"><h3>Checklists da OS</h3><span class="pill">Operacional</span></div><div class="panel-body"><div id="order-checklists"></div><div class="actions" style="margin-top:14px"><button class="btn primary" id="add-order-checklist">+ Adicionar checklist</button><button class="btn" id="create-order-checklist">Cadastrar template</button></div></div></div>
+          </div>
+
+          <div class="order-tab-panel is-hidden" data-order-panel="history">
+            <div class="panel" id="order-history-panel"><div class="panel-head"><h3>Histórico operacional</h3><span class="pill">Imutável</span></div><div class="panel-body timeline"></div></div>
+          </div>
+        </div>
+
+        <aside class="stack work-order-sidebar">
+          <div class="panel"><div class="panel-head"><h3>Resumo financeiro</h3></div><div class="panel-body summary-list"><div class="summary-row"><span>Serviços</span><b id="summary-services">R$ 0,00</b></div><div class="summary-row"><span>Peças</span><b id="summary-parts">R$ 0,00</b></div><div class="summary-row"><span>Desconto geral</span><b id="summary-discount">R$ 0,00</b></div><div class="discount-control"><select id="discount-type" aria-label="Tipo do desconto"><option value="FIXED">R$</option><option value="PERCENT">%</option></select><input id="discount-value" inputmode="decimal" aria-label="Valor do desconto" placeholder="0,00"></div><div class="discount-preview" id="discount-preview">Total recalculado pelo servidor</div><button class="btn" id="save-discount" type="button">Aplicar desconto</button><div class="summary-row total"><span>Total</span><span id="summary-total">R$ 0,00</span></div></div></div>
+          <div class="panel"><div class="panel-head"><h3>Informações</h3></div><div class="panel-body context"><div class="context-item"><span class="label">Cliente</span><b id="context-customer"></b><div class="item-sub" id="context-phone"></div></div><div class="context-item"><span class="label">Bike</span><b id="context-bike"></b><div class="item-sub" id="context-bike-details"></div></div><div class="context-item clickable" id="context-mechanic-wrap"><span class="label">Mecânico</span><b id="context-mechanic"></b></div><div class="context-item"><span class="label">Entrada</span><b id="context-entry"></b></div><div class="context-item clickable" id="context-deadline-wrap"><span class="label">Previsão</span><b id="context-deadline"></b><div class="item-sub" id="context-deadline-state"></div></div><div class="context-item clickable" id="context-priority-wrap"><span class="label">Prioridade</span><b id="context-priority"></b></div></div></div>
+          <div class="panel"><div class="panel-head"><h3>Atividade recente</h3></div><div class="panel-body timeline" id="order-history-summary"></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="page inventory-page" id="inventory">
+      <div class="inventory-page-title"><div><h1>Estoque</h1><p>Gerencie suas peças e movimentações de estoque.</p></div><button class="btn inventory-movements-link" type="button">Ver movimentações</button></div>
+
+      <div class="inventory-summary" aria-label="Resumo do estoque">
+        <article class="inventory-kpi"><span class="inventory-kpi-icon blue"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></svg></span><div><span>Peças cadastradas</span><strong data-stock-summary="registered">—</strong><small>itens diferentes</small></div></article>
+        <article class="inventory-kpi warning"><span class="inventory-kpi-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5M12 18h.01"/></svg></span><div><span>Estoque baixo</span><strong data-stock-summary="reorder">—</strong><small>precisam de reposição</small></div></article>
+        <article class="inventory-kpi value"><span class="inventory-kpi-icon green"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c-1-1-2.5-1.5-5-1.5-3 0-5 1.5-5 3.5s2 3.5 5 3.5 5 1.5 5 3.5-2 3.5-5 3.5c-2.5 0-4-.5-5-1.5"/></svg></span><div><span>Valor em estoque</span><strong data-stock-summary="totalCostCents">—</strong><small>físico × custo médio</small></div></article>
+        <article class="inventory-kpi movements"><span class="inventory-kpi-icon purple"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 3v15m0 0-4-4m4 4 4-4M16 21V6m0 0-4 4m4-4 4 4"/></svg></span><div><span>Movimentações hoje</span><strong data-stock-summary="movementsToday">—</strong><small>entradas e saídas</small></div></article>
+      </div>
+
+      <div class="inventory-filter-bar">
+        <select class="selectlike" id="inventory-category-filter" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option></select>
+        <select class="selectlike" id="inventory-brand-filter" aria-label="Filtrar por marca"><option value="">Todas as marcas</option></select>
+        <select class="selectlike" id="inventory-location-filter" aria-label="Filtrar por localização"><option value="">Todas as localizações</option></select>
+        <select class="selectlike" id="inventory-status-filter" aria-label="Filtrar por status"><option value="all">Status: Todos</option><option value="normal">Status: Normal</option><option value="low">Status: Baixo</option><option value="zero">Status: Sem estoque</option></select>
+        <button class="btn ghost inventory-clear-filters" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z"/></svg>Limpar filtros</button>
+      </div>
+
+      <div class="inventory-list-toolbar">
+        <div class="inventory-tabs" role="tablist" aria-label="Filtros rápidos do estoque"><button class="active" type="button" data-stock-quick="all">Todos</button><button type="button" data-stock-quick="used">Mais usados</button><button type="button" data-stock-quick="low">Estoque baixo</button><button type="button" data-stock-quick="reorder">Precisa repor</button></div>
+        <label class="inventory-sort-label">Ordenar por:<select class="selectlike" id="inventory-sort" aria-label="Ordenar estoque"><option value="name_asc">Nome A-Z</option><option value="name_desc">Nome Z-A</option><option value="stock_asc">Menor estoque</option><option value="stock_desc">Maior estoque</option><option value="price_asc">Menor preço</option><option value="price_desc">Maior preço</option><option value="movement_desc">Última movimentação</option><option value="usage_desc">Mais usados</option></select></label>
+      </div>
+
+      <div class="inventory-grid inventory-products-grid" aria-live="polite"><div class="inventory-empty">Carregando estoque…</div></div>
+
+      <div class="inventory-insights">
+        <article class="inventory-panel low-stock-panel"><header><h2><span class="panel-icon warning">△</span>Precisa repor <small data-reorder-count></small></h2><button type="button" data-panel-filter="reorder">Ver todas</button></header><div class="inventory-panel-body" data-low-stock-list></div></article>
+        <article class="inventory-panel most-used-panel"><header><h2><span class="panel-icon green">↗</span>Mais usadas</h2><button type="button" data-panel-filter="used">Ver todas</button></header><div class="inventory-panel-body" data-most-used-list></div></article>
+        <article class="inventory-panel recent-movements-panel"><header><h2><span class="panel-icon blue">↝</span>Movimentações recentes</h2><button type="button" data-open-movements>Ver todas</button></header><div class="inventory-panel-body" data-recent-movements></div></article>
+      </div>
+
+      <div class="inventory-list-footer"><p data-inventory-range>Mostrando peças</p><nav class="inventory-pagination" aria-label="Paginação do estoque"></nav></div>
+    </section>
+
+    <section class="page" id="inventory-movements">
+      <div class="page-head"><div><button class="btn ghost" data-page-link="inventory">← Voltar ao estoque</button><h1 style="margin-top:14px">Movimentações</h1><p>Ledger local de todas as alterações de quantidade.</p></div></div>
+      <div class="toolbar"><div class="searchbox"><span>⌕</span><input placeholder="Buscar peça, tipo, motivo ou OS..."/></div></div>
+      <div class="card table" id="movement-table">
+        <div class="table-head" style="grid-template-columns:150px 1fr 160px 110px 1fr"><div>Data</div><div>Peça</div><div>Tipo</div><div>Variação</div><div>Origem / motivo</div></div>
+      </div>
+    </section>
+
+    <section class="page" id="catalog">
+      <div class="page-head"><div><h1>Catálogo de peças</h1><p>Peças conhecidas pela plataforma. Adicione ao estoque sem digitar tudo do zero.</p></div></div>
+      <div class="toolbar"><div class="searchbox" style="max-width:650px">⌕ <input placeholder="Buscar peça, marca, modelo ou código…"/></div></div>
+      <div class="catalog-layout" style="grid-template-columns:1fr">
+        <div class="card catalog-list">
+          <div class="part-row"><div><h4>KMC X10</h4><div class="meta">Corrente · 10 velocidades · 116 elos</div><div class="tagrow"><span class="pill">Shimano</span><span class="pill">SRAM</span><span class="pill">10v</span></div></div><div><span class="pill green">No estoque: 4</span></div><div><button class="btn">Ver peça</button></div></div>
+          <div class="part-row"><div><h4>Shimano CN-HG54</h4><div class="meta">Corrente · Deore · 10 velocidades</div><div class="tagrow"><span class="pill">Shimano</span><span class="pill">10v</span></div></div><div><span class="pill">Fora do estoque</span></div><div><button class="btn primary">Adicionar</button></div></div>
+          <div class="part-row"><div><h4>SRAM PC-1031</h4><div class="meta">Corrente · 10 velocidades</div><div class="tagrow"><span class="pill">SRAM</span><span class="pill">Shimano</span><span class="pill">10v</span></div></div><div><span class="pill">Fora do estoque</span></div><div><button class="btn primary">Adicionar</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="services">
+      <div class="page-head"><div><h1>Catálogo de serviços</h1><p>Serviços padronizados para adicionar à OS sem redigitar preços.</p></div><div class="actions"><button class="btn primary">+ Novo serviço</button></div></div>
+      <div class="toolbar"><div class="searchbox"><span>⌕</span><input placeholder="Buscar serviço ou categoria..."/></div><div class="segment"><button class="active">Ativos</button><button>Arquivados</button></div></div>
+      <div class="card table" id="service-table"><div class="table-head" style="grid-template-columns:1.4fr 1fr 150px 120px"><div>Serviço</div><div>Categoria</div><div>Preço</div><div>Ações</div></div></div>
+    </section>
+
+    <section class="page" id="checklists">
+      <div class="page-head"><div><h1>Checklists</h1><p>Inspeções persistidas por cliente e bicicleta, com itens reutilizáveis.</p></div><div class="actions"><button class="btn primary">+ Novo checklist</button></div></div>
+      <div class="inventory-grid" id="checklist-grid"></div>
+    </section>
+
+    <section class="page" id="customers">
+      <div class="page-head"><div><h1>Clientes</h1><p>Cadastros, bicicletas e histórico técnico em um só lugar.</p></div><div class="actions"><button class="btn primary">+ Novo cliente</button></div></div>
+      <div class="toolbar"><div class="searchbox">⌕ <input placeholder="Buscar nome ou telefone..."/></div></div>
+      <div class="card table">
+        <div class="table-head" style="grid-template-columns:1.4fr 1fr 100px 130px"><div>Cliente</div><div>Telefone</div><div>Bikes</div><div>Última OS</div></div>
+        <div class="table-row" style="grid-template-columns:1.4fr 1fr 100px 130px"><div><b>Carlos Silva</b></div><div>(41) 98812-4410</div><div>2</div><div>#1042</div></div>
+        <div class="table-row" style="grid-template-columns:1.4fr 1fr 100px 130px"><div><b>Pedro Almeida</b></div><div>(41) 99431-2280</div><div>3</div><div>#1040</div></div>
+        <div class="table-row" style="grid-template-columns:1.4fr 1fr 100px 130px"><div><b>Marcos Toledo</b></div><div>(41) 99722-8831</div><div>1</div><div>#1041</div></div>
+      </div>
+    </section>
+
+    <section class="page" id="customer-detail">
+      <div class="page-head">
+        <div><button class="btn ghost" data-page-link="customers">← Voltar para clientes</button><h1 id="customer-name" style="margin-top:14px">Cliente</h1><p id="customer-contact"></p></div>
+        <div class="actions"><button class="btn" id="edit-customer">Editar cliente</button><button class="btn danger" id="archive-customer">Arquivar</button><button class="btn primary" id="new-bike">+ Nova bike</button></div>
+      </div>
+      <div class="grid-4" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:24px">
+        <div class="metric"><div class="label">Bikes cadastradas</div><div class="value" id="customer-bike-count">0</div><div class="foot">ativas neste cliente</div></div>
+        <div class="metric"><div class="label">Última OS</div><div class="value" id="customer-last-order" style="font-size:28px">—</div><div class="foot">histórico da oficina</div></div>
+        <div class="metric"><div class="label">Situação</div><div class="value" id="customer-status" style="font-size:28px;color:var(--success)">Ativo</div><div class="foot" id="customer-status-note">cadastro disponível para novas OS</div></div>
+      </div>
+      <div class="section-title"><h2>Bicicletas</h2><span class="sub">cadastro e histórico técnico do cliente</span></div>
+      <div class="inventory-grid" id="customer-bikes"></div>
+    </section>
+
+    <section class="page" id="team">
+      <div class="page-head"><div><h1>Equipe</h1><p>Usuários reais, papéis e acesso à oficina.</p></div><div class="actions"><button class="btn primary">+ Adicionar membro</button></div></div>
+      <div class="card table" id="team-table"><div class="table-head" style="grid-template-columns:1.4fr 1fr 180px 150px"><div>Nome</div><div>E-mail</div><div>Papel</div><div>Situação</div></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-wrap" id="new-order" role="dialog" aria-modal="true" aria-labelledby="new-order-title">
+  <div class="modal">
+    <div class="modal-head"><h2 id="new-order-title">Nova ordem de serviço</h2><p>Registre a entrada da bike sem transformar isso em um formulário enorme.</p></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label for="new-order-customer">Cliente</label><input id="new-order-customer" placeholder="Buscar cliente pelo nome ou telefone"/><button type="button" class="btn ghost" id="quick-new-customer">+ Cadastrar cliente</button></div>
+        <div class="field"><label for="new-order-bike">Bike</label><select id="new-order-bike"><option>Selecione uma bike...</option></select><button type="button" class="btn ghost" id="quick-new-bike">+ Cadastrar bicicleta</button></div>
+        <div class="field"><label for="new-order-complaint">Problema relatado</label><textarea id="new-order-complaint" placeholder="Ex.: marcha pulando, freio traseiro fraco..."></textarea></div>
+        <div class="field"><label for="new-order-date">Previsão de entrega (opcional)</label><input id="new-order-date" type="date"/></div>
+        <div class="field"><label for="new-order-note">Observação do prazo (opcional)</label><input id="new-order-note" maxlength="2000" placeholder="Ex.: confirmar horário com o cliente"/></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('new-order')">Cancelar</button><button class="btn primary" onclick="closeModal('new-order')">Criar OS</button></div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="ready" role="dialog" aria-modal="true" aria-labelledby="ready-title">
+  <div class="modal">
+    <div class="modal-head"><h2 id="ready-title">Marcar OS #1042 como pronta?</h2><p>Ao confirmar, as peças abaixo serão baixadas do estoque e a ordem ficará travada para edição.</p></div>
+    <div class="modal-body">
+      <div class="confirm-box">
+        <div class="stock-delta"><b>Peça</b><b>Agora</b><b>Depois</b></div>
+        <div class="stock-delta"><span>KMC X10</span><b>4</b><b>3</b></div>
+        <div class="stock-delta"><span>Shimano B05S-RX</span><b>2</b><b style="color:var(--warning)">1</b></div>
+      </div>
+      <div class="summary-list"><div class="summary-row total"><span>Total da OS</span><span>R$ 245,00</span></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('ready')">Cancelar</button><button class="btn success" onclick="closeModal('ready')">Confirmar e marcar pronta</button></div>
+  </div>
+</div>
+
+<script src="/inventory-ui.js"></script>
+<script src="/bikeflow.js"></script>
+</body>
+</html>

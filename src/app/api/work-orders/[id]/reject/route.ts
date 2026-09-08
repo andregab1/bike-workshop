@@ -1,0 +1,6 @@
+import { getRequestContext } from "@/lib/request-context";
+import { quoteDecisionSchema } from "@/modules/work-orders/schemas/work-order";
+import { workOrderService } from "@/modules/work-orders/services/work-order-service";
+import { errorResponse } from "@/shared/http/errors";
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) { try { const { id } = await params; const input = quoteDecisionSchema.parse(await request.json()); return Response.json({ data: await workOrderService.decideQuote(await getRequestContext(), id, "REJECTED", input) }); } catch (error) { return errorResponse(error); } }

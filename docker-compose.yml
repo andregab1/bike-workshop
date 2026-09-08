@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bikeflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bikeflow_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-bikeflow}
+    ports:
+      - "5432:5432"
+    volumes:
+      - bikeflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bikeflow} -d ${POSTGRES_DB:-bikeflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bikeflow_postgres_data:
