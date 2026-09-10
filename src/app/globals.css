@@ -15,9 +15,11 @@ body,
 }
 
 body {
-  overflow: hidden;
   background: #fbfcf8;
 }
+
+.prototype-shell { overflow: hidden; }
+.native-root { min-height: 100dvh; }
 
 .auth-shell {
   min-height: 100dvh;

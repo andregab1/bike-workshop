@@ -67,7 +67,12 @@ describe.sequential("inventory PostgreSQL integration", () => {
     await expect(inventoryService.manualExit(context, inventoryId, { quantity: 31, reasonCode: "OUTRO", notes: "Teste", document: undefined })).rejects.toMatchObject({ code: "INSUFFICIENT_AVAILABLE_STOCK" });
     const item = await inventoryService.manualExit(context, inventoryId, { quantity: 2, reasonCode: "USO_INTERNO", notes: "Uso", document: undefined }); expect(Number(item.quantity)).toBe(28);
   });
-  it("does not expose another workshop item", async () => { await expect(inventoryService.get(foreignContext, inventoryId)).rejects.toMatchObject({ code: "INVENTORY_ITEM_NOT_FOUND" }); });
+  it("blocks cross-workshop inventory reads and mutations", async () => {
+    await expect(inventoryService.get(foreignContext, inventoryId)).rejects.toMatchObject({ code: "INVENTORY_ITEM_NOT_FOUND" });
+    await expect(inventoryService.entry(foreignContext, inventoryId, { quantity: 1 })).rejects.toMatchObject({ code: "INVENTORY_ITEM_NOT_FOUND" });
+    await expect(inventoryService.update(foreignContext, inventoryId, { location: "INVASÃO" })).rejects.toMatchObject({ code: "INVENTORY_ITEM_NOT_FOUND" });
+    await expect(inventoryService.deactivate(foreignContext, inventoryId)).rejects.toMatchObject({ code: "INVENTORY_ITEM_NOT_FOUND" });
+  });
   it("reserves on approval without changing physical", async () => {
     const order = await workOrderService.create(context, { bikeId, complaint: "Teste", diagnosis: "", services: [], parts: [{ inventoryItemId: inventoryId, name: "Disco teste", quantity: 2, unitPriceCents: 8_000, discountCents: 0, surchargeCents: 0 }], checklist: null }); editableOrderId = order.id;
     const approved = await workOrderService.decideQuote(context, order.id, "APPROVED", { channel: "IN_PERSON" }); const item = await inventoryService.get(context, inventoryId); expect(Number(item.quantity)).toBe(28); expect(Number(item.reservedQuantity)).toBe(2); expect(Number(item.availableQuantity)).toBe(26); expect(approved.approvalStatus).toBe("APPROVED");
@@ -88,6 +93,14 @@ describe.sequential("inventory PostgreSQL integration", () => {
   it("calculates real summary cost", async () => { const result = await inventoryService.list(context, { page: 1, size: 30, status: "all", sort: "name_asc" }); expect(result.summary.registered).toBe(1); expect(result.summary.available).toBe(25); expect(result.summary.totalCostCents).toBe(150_000); });
   it("supports the inventory screen filters and real usage ranking", async () => { const result = await inventoryService.list(context, { page: 1, size: 16, status: "normal", sort: "usage_desc", location: "B-03" }); expect(result.items).toHaveLength(1); expect(result.items[0]).toMatchObject({ id: inventoryId, usageCount: 3, unitsUsed: 5 }); expect(result.locations).toContain("B-03"); expect(result.summary.movementsToday).toBeGreaterThan(0); });
   it("prevents concurrent over-reservation", async () => {
-    const makeOrder = () => workOrderService.create(context, { bikeId, complaint: "Concorrência", diagnosis: "", services: [], parts: [{ inventoryItemId: inventoryId, name: "Disco teste", quantity: 20, unitPriceCents: 8_000, discountCents: 0, surchargeCents: 0 }], checklist: null }); const [a, b] = await Promise.all([makeOrder(), makeOrder()]); const decisions = await Promise.allSettled([workOrderService.decideQuote(context, a.id, "APPROVED", { channel: "IN_PERSON" }), workOrderService.decideQuote(context, b.id, "APPROVED", { channel: "IN_PERSON" })]); expect(decisions.filter((result) => result.status === "fulfilled")).toHaveLength(1); const item = await inventoryService.get(context, inventoryId); expect(Number(item.reservedQuantity)).toBeLessThanOrEqual(Number(item.quantity));
+    const lastItem = await inventoryService.createCustom(context, { customName: "Última unidade", quantity: 1, minimumQuantity: 0, unitOfMeasure: "UNIT", costPriceCents: 1_000, salePriceCents: 2_000, sku: `LAST-${run}`, purchaseDocument: "NF-LAST", purchaseDate: "2026-08-27" });
+    const makeOrder = () => workOrderService.create(context, { bikeId, complaint: "Concorrência", diagnosis: "", services: [], parts: [{ inventoryItemId: lastItem.id, name: "Última unidade", quantity: 1, unitPriceCents: 2_000, discountCents: 0, surchargeCents: 0 }], checklist: null });
+    const [a, b] = await Promise.all([makeOrder(), makeOrder()]);
+    const decisions = await Promise.allSettled([workOrderService.decideQuote(context, a.id, "APPROVED", { channel: "IN_PERSON" }), workOrderService.decideQuote(context, b.id, "APPROVED", { channel: "IN_PERSON" })]);
+    expect(decisions.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(decisions.filter((result) => result.status === "rejected")).toHaveLength(1);
+    const item = await inventoryService.get(context, lastItem.id);
+    expect(Number(item.reservedQuantity)).toBe(1);
+    expect(Number(item.availableQuantity)).toBe(0);
   });
 });

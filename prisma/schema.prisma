@@ -430,7 +430,7 @@ model InventoryItem {
 
   @@index([workshopId, active, customName])
   @@index([workshopId, location, active])
-  @@index([workshopId, sku])
+  @@unique([workshopId, sku])
   @@index([workshopId, ean])
   @@index([workshopId, brandId, active])
   @@index([workshopId, categoryId, active])
@@ -653,6 +653,8 @@ model WorkOrder {
   bike                  Bike                     @relation(fields: [bikeId], references: [id], onDelete: Restrict)
   customerSnapshotId    String
   customerSnapshot      Customer                 @relation("WorkOrderCustomerSnapshot", fields: [customerSnapshotId], references: [id], onDelete: Restrict)
+  customerSnapshotData  Json?
+  bikeSnapshotData      Json?
   number                Int
   legacyKey             String?
   status                WorkOrderStatus          @default(OPEN)

@@ -68,7 +68,7 @@ export const manualExitSchema = z.object({
   document: z.string().trim().max(80).transform((value) => value || undefined).optional(),
   notes: z.string().trim().max(240).transform((value) => value || undefined).optional(),
 }).superRefine((value, context) => {
-  if (!value.reasonCode && !value.reason) context.addIssue({ code: "custom", message: "Informe o motivo da saÃ­da." });
+  if (!value.reasonCode && !value.reason) context.addIssue({ code: "custom", message: "Informe o motivo da saída." });
 }).transform((value) => ({ quantity: value.quantity, reasonCode: value.reasonCode ?? "OUTRO" as const, notes: value.notes ?? value.reason, document: value.document }));
 
 export const createCatalogInventoryItemSchema = createCustomInventoryItemSchema.omit({ customName: true, unitOfMeasure: true }).extend({

@@ -25,8 +25,8 @@ const displayDeadline = (order) => order.expected ? formatDeadline(order.expecte
 const mapWorkOrder = (order) => {
   const mapped = {
     id: order.id, number: order.number, version: order.version, workshopName: order.workshop?.name,
-    workshop: order.workshop, customerId: order.customerSnapshotId || order.bike.customerId, customer: order.customerSnapshot || order.bike?.customer,
-    bikeId: order.bikeId, bike: order.bike, status: order.status, priority: order.priority || 'NORMAL', complaint: order.complaint,
+    workshop: order.workshop, customerId: order.customerSnapshotId || order.bike.customerId, customer: order.customerSnapshotData || order.customerSnapshot || order.bike?.customer,
+    bikeId: order.bikeId, bike: order.bikeSnapshotData || order.bike, status: order.status, priority: order.priority || 'NORMAL', complaint: order.complaint,
     diagnosis: order.diagnosis || '', technicalRecommendations: order.technicalRecommendations || '', technicalNotes: order.technicalNotes || '',
     expected: order.expectedDate?.slice(0, 10) || '', expectedNote: order.expectedNote || '', createdAt: order.createdAt, startedAt: order.startedAt,
     readyAt: order.readyAt, completedAt: order.completedAt, executionPausedAt: order.executionPausedAt, stockConsumed: order.stockConsumed,

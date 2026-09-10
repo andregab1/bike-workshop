@@ -1,12 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, type ReactNode, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 type Me = { user: { id: string; name: string; email: string; activeWorkshopId?: string | null }; memberships: Array<{ id: string; role: string; workshop: { id: string; name: string; slug: string } }> };
 async function loadMe(): Promise<Me | null> { const response = await fetch("/api/me", { cache: "no-store" }); return (await response.json()).data; }
 
-export function BikeFlowGate() {
+export function BikeFlowGate({ children }: { children?: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
   const [me, setMe] = useState<Me | null>(null);
   const [bootstrap, setBootstrap] = useState<{ registrationOpen: boolean; workshopConfigured: boolean } | null>(null);
@@ -23,5 +23,5 @@ export function BikeFlowGate() {
   const activeWorkshopId = me.memberships.some((membership) => membership.workshop.id === me.user.activeWorkshopId)
     ? me.user.activeWorkshopId
     : me.memberships[0].workshop.id;
-  return <main className="prototype-shell"><div className="session-bar"><label>Oficina<select value={activeWorkshopId || ""} onChange={(event) => void switchWorkshop(event.target.value)}>{me.memberships.map((membership) => <option key={membership.id} value={membership.workshop.id}>{membership.workshop.name}</option>)}</select></label><span>{me.user.name}</span><button type="button" onClick={() => void authClient.signOut()}>Sair</button></div><iframe className="prototype-frame authenticated" src="/bikeflow.html" title="BikeFlow — sistema da oficina" /></main>;
+  return <main className={children ? "native-root" : "prototype-shell"}><div className="session-bar"><label>Oficina<select value={activeWorkshopId || ""} onChange={(event) => void switchWorkshop(event.target.value)}>{me.memberships.map((membership) => <option key={membership.id} value={membership.workshop.id}>{membership.workshop.name}</option>)}</select></label><span>{me.user.name}</span><button type="button" onClick={() => void authClient.signOut()}>Sair</button></div>{children || <iframe className="prototype-frame authenticated" src="/bikeflow.html" title="BikeFlow — sistema da oficina" />}</main>;
 }

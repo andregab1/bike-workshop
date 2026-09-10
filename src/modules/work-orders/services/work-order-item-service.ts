@@ -2,18 +2,10 @@ import "server-only";
 
 import { Prisma } from "@/generated/prisma/client";
 import type { RequestContext } from "@/lib/request-context";
-import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/serializable-transaction";
 import { reconcileReservations } from "@/modules/work-orders/services/work-order-service";
 import { requirePermission } from "@/shared/auth/permissions";
 import { DomainError } from "@/shared/http/errors";
-
-async function serializable<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try { return await prisma.$transaction(operation, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }); }
-    catch (error) { if ((error as { code?: string }).code !== "P2034" || attempt === 2) throw error; }
-  }
-  throw new DomainError("A OS foi alterada ao mesmo tempo. Tente novamente.", 409, "CONCURRENT_WORK_ORDER_CHANGE");
-}
 
 async function owned(context: RequestContext, id: string, tx: Prisma.TransactionClient) {
   const order = await tx.workOrder.findFirst({ where: { id, workshopId: context.workshopId }, include: { services: true, parts: true, reservations: true } });
@@ -23,11 +15,9 @@ async function owned(context: RequestContext, id: string, tx: Prisma.Transaction
 }
 
 async function updateTotals(tx: Prisma.TransactionClient, orderId: string) {
-  const [services, parts, order] = await Promise.all([
-    tx.workOrderServiceLine.aggregate({ where: { workOrderId: orderId }, _sum: { totalCents: true } }),
-    tx.workOrderPartLine.aggregate({ where: { workOrderId: orderId }, _sum: { totalCents: true } }),
-    tx.workOrder.findUniqueOrThrow({ where: { id: orderId }, select: { generalDiscountCents: true, generalSurchargeCents: true } }),
-  ]);
+  const services = await tx.workOrderServiceLine.aggregate({ where: { workOrderId: orderId }, _sum: { totalCents: true } });
+  const parts = await tx.workOrderPartLine.aggregate({ where: { workOrderId: orderId }, _sum: { totalCents: true } });
+  const order = await tx.workOrder.findUniqueOrThrow({ where: { id: orderId }, select: { generalDiscountCents: true, generalSurchargeCents: true } });
   const laborSubtotalCents = services._sum.totalCents ?? 0;
   const partsSubtotalCents = parts._sum.totalCents ?? 0;
   const totalCents = Math.max(0, laborSubtotalCents + partsSubtotalCents - order.generalDiscountCents + order.generalSurchargeCents);
@@ -41,7 +31,7 @@ function activity(context: RequestContext, workOrderId: string, title: string, d
 export const workOrderItemService = {
   addService(context: RequestContext, orderId: string, input: { serviceCatalogItemId: string; quantity: number; performedById?: string | null }) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       await owned(context, orderId, tx);
       const catalog = await tx.serviceCatalogItem.findFirst({ where: { id: input.serviceCatalogItemId, workshopId: context.workshopId, active: true } });
       if (!catalog) throw new DomainError("Serviço ativo não encontrado nesta oficina.", 404, "SERVICE_NOT_FOUND");
@@ -60,7 +50,7 @@ export const workOrderItemService = {
 
   removeService(context: RequestContext, orderId: string, lineId: string) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       await owned(context, orderId, tx);
       const line = await tx.workOrderServiceLine.findFirst({ where: { id: lineId, workOrder: { id: orderId, workshopId: context.workshopId } } });
       if (!line) throw new DomainError("Serviço não encontrado nesta OS.", 404, "SERVICE_LINE_NOT_FOUND");
@@ -73,7 +63,7 @@ export const workOrderItemService = {
 
   updateService(context: RequestContext, orderId: string, lineId: string, input: { quantity: number; discountCents: number; reason: string; performedById?: string | null }) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       await owned(context, orderId, tx);
       const line = await tx.workOrderServiceLine.findFirst({ where: { id: lineId, workOrder: { id: orderId, workshopId: context.workshopId } } });
       if (!line) throw new DomainError("Serviço não encontrado nesta OS.", 404, "SERVICE_LINE_NOT_FOUND");
@@ -89,7 +79,7 @@ export const workOrderItemService = {
 
   addPart(context: RequestContext, orderId: string, input: { inventoryItemId: string; quantity: number }) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, orderId, tx);
       const item = await tx.inventoryItem.findFirst({ where: { id: input.inventoryItemId, workshopId: context.workshopId, active: true }, include: { catalogPart: true } });
       if (!item) throw new DomainError("Peça ativa não encontrada nesta oficina.", 404, "INVENTORY_ITEM_NOT_FOUND");
@@ -112,7 +102,7 @@ export const workOrderItemService = {
 
   removePart(context: RequestContext, orderId: string, lineId: string) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, orderId, tx);
       const line = await tx.workOrderPartLine.findFirst({ where: { id: lineId, workOrder: { id: orderId, workshopId: context.workshopId } } });
       if (!line) throw new DomainError("Peça não encontrada nesta OS.", 404, "PART_LINE_NOT_FOUND");
@@ -129,7 +119,7 @@ export const workOrderItemService = {
 
   updatePart(context: RequestContext, orderId: string, lineId: string, input: { quantity: number; discountCents: number; reason: string }) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, orderId, tx);
       const line = await tx.workOrderPartLine.findFirst({ where: { id: lineId, workOrder: { id: orderId, workshopId: context.workshopId } } });
       if (!line) throw new DomainError("Peça não encontrada nesta OS.", 404, "PART_LINE_NOT_FOUND");

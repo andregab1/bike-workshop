@@ -15,4 +15,14 @@ describe("role permissions", () => {
     expect(() => requirePermission(context("MECHANIC"), "MANAGE_BIKES")).not.toThrow();
     expect(() => requirePermission(context("MECHANIC"), "MANAGE_CUSTOMERS")).toThrowError(/permissão/i);
   });
+  it("keeps owner, manager and mechanic operational boundaries explicit", () => {
+    for (const role of ["OWNER", "MANAGER"] as const) {
+      expect(() => requirePermission(context(role), "CANCEL_WORK_ORDER")).not.toThrow();
+      expect(() => requirePermission(context(role), "ADJUST_STOCK")).not.toThrow();
+      expect(() => requirePermission(context(role), "APPROVE_QUOTE")).not.toThrow();
+    }
+    expect(() => requirePermission(context("MECHANIC"), "MANAGE_WORK_ORDERS")).not.toThrow();
+    expect(() => requirePermission(context("MECHANIC"), "CANCEL_WORK_ORDER")).toThrowError(/permissão/i);
+    expect(() => requirePermission(context("MECHANIC"), "APPROVE_QUOTE")).toThrowError(/permissão/i);
+  });
 });

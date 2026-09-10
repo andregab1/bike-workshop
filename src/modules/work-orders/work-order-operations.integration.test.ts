@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/prisma";
 import type { RequestContext } from "@/lib/request-context";
+import { customerService } from "@/modules/customers/services/customer-service";
 import { inventoryService } from "@/modules/inventory/services/inventory-service";
 import { workOrderItemService } from "@/modules/work-orders/services/work-order-item-service";
 import { workOrderOperationService } from "@/modules/work-orders/services/work-order-operation-service";
@@ -11,11 +12,13 @@ import { workOrderService } from "@/modules/work-orders/services/work-order-serv
 const run = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 let context: RequestContext;
 let foreignContext: RequestContext;
+let customerId = "";
 let bikeId = "";
 let inventoryItemId = "";
 let serviceCatalogItemId = "";
 let checklistTemplateId = "";
 let orderId = "";
+let foreignBikeId = "";
 
 async function cleanup(workshopId: string) {
   const orders = await prisma.workOrder.findMany({ where: { workshopId }, select: { id: true } }); const orderIds = orders.map((item) => item.id);
@@ -51,8 +54,9 @@ beforeAll(async () => {
   const workshop = await prisma.workshop.create({ data: { authOrganizationId: `wo-org-${run}`, name: "Oficina OS", slug: `wo-${run}` } });
   const member = await prisma.workshopMember.create({ data: { workshopId: workshop.id, userId: user.id, role: "OWNER" } });
   context = { userId: user.id, workshopId: workshop.id, memberId: member.id, role: "OWNER" };
-  const customer = await prisma.customer.create({ data: { workshopId: workshop.id, name: "Ana Teste", phone: "41988124410", normalizedPhone: "41988124410", createdById: user.id } });
-  bikeId = (await prisma.bike.create({ data: { workshopId: workshop.id, customerId: customer.id, brand: "Sense", model: "Impact Pro", type: "MTB", wheelSize: "29" } })).id;
+  const customer = await prisma.customer.create({ data: { workshopId: workshop.id, name: "Ana Teste", phone: "41988124410", normalizedPhone: "41988124410", email: "ana@test.local", normalizedEmail: "ana@test.local", cpfCnpj: "123.456.789-00", normalizedCpfCnpj: "12345678900", createdById: user.id } });
+  customerId = customer.id;
+  bikeId = (await prisma.bike.create({ data: { workshopId: workshop.id, customerId: customer.id, brand: "Sense", model: "Impact Pro", year: 2025, type: "MTB", wheelSize: "29", frameSize: "M", color: "Azul", serialNumber: `BIKE-${run}` } })).id;
   serviceCatalogItemId = (await prisma.serviceCatalogItem.create({ data: { workshopId: workshop.id, name: "Troca de disco", priceCents: 9_000, warrantyDays: 30 } })).id;
   inventoryItemId = (await inventoryService.createCustom(context, { customName: "Disco Shimano", quantity: 3, minimumQuantity: 1, unitOfMeasure: "UNIT", costPriceCents: 4_000, salePriceCents: 7_490, purchaseDocument: "NF-OS", purchaseDate: "2026-08-27" })).id;
   checklistTemplateId = (await prisma.checklistTemplate.create({ data: { workshopId: workshop.id, name: "Checklist técnico", items: { create: [{ label: "Freios", sortOrder: 0 }, { label: "Direção", sortOrder: 1 }] } } })).id;
@@ -60,6 +64,8 @@ beforeAll(async () => {
   const foreignWorkshop = await prisma.workshop.create({ data: { authOrganizationId: `wo-foreign-org-${run}`, name: "Outra", slug: `wo-foreign-${run}` } });
   const foreignMember = await prisma.workshopMember.create({ data: { workshopId: foreignWorkshop.id, userId: foreignUser.id, role: "OWNER" } });
   foreignContext = { userId: foreignUser.id, workshopId: foreignWorkshop.id, memberId: foreignMember.id, role: "OWNER" };
+  const foreignCustomer = await prisma.customer.create({ data: { workshopId: foreignWorkshop.id, name: "Cliente Externo", phone: "11999999999", normalizedPhone: "11999999999", createdById: foreignUser.id } });
+  foreignBikeId = (await prisma.bike.create({ data: { workshopId: foreignWorkshop.id, customerId: foreignCustomer.id, brand: "Outra", model: "Bike" } })).id;
 });
 
 afterAll(async () => {
@@ -74,6 +80,48 @@ describe.sequential("professional work order operations", () => {
     const part = await workOrderItemService.addPart(context, orderId, { inventoryItemId, quantity: 1 });
     expect(service.unitPriceCents).toBe(9_000); expect(part.unitPriceCents).toBe(7_490);
     expect((await workOrderService.get(context, orderId)).totalCents).toBe(16_490);
+  });
+
+  it("keeps immutable customer and bike snapshots", async () => {
+    await customerService.update(context, customerId, { name: "Ana Atualizada", phone: "(41) 99999-9999", email: "nova@example.com", cpfCnpj: "987.654.321-00" });
+    await prisma.bike.update({ where: { id: bikeId }, data: { brand: "Marca Nova", color: "Verde" } });
+
+    const order = await workOrderService.get(context, orderId);
+    expect(order.customerSnapshotData).toMatchObject({ name: "Ana Teste", phone: "41988124410", email: "ana@test.local", cpfCnpj: "123.456.789-00" });
+    expect(order.bikeSnapshotData).toMatchObject({ brand: "Sense", model: "Impact Pro", year: 2025, frameSize: "M", color: "Azul", serialNumber: `BIKE-${run}` });
+    expect(order.bike.brand).toBe("Marca Nova");
+  });
+
+  it("searches customers by normalized identity fields", async () => {
+    for (const query of ["Ana Atualizada", "(41) 99999-9999", "NOVA@EXAMPLE.COM", "987.654.321-00"]) {
+      await expect(customerService.list(context, query)).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ id: customerId })]));
+    }
+  });
+
+  it("allocates concurrent numbers atomically and independently by workshop", async () => {
+    const createInput = { bikeId, complaint: "Teste concorrente", diagnosis: "", services: [], parts: [], checklist: null };
+    const [first, second, foreign] = await Promise.all([
+      workOrderService.create(context, createInput),
+      workOrderService.create(context, createInput),
+      workOrderService.create(foreignContext, { ...createInput, bikeId: foreignBikeId }),
+    ]);
+
+    expect(new Set([first.number, second.number]).size).toBe(2);
+    expect([first.number, second.number].sort((a, b) => a - b)).toEqual([1002, 1003]);
+    expect(foreign.number).toBe(1001);
+    await expect(prisma.workOrderCounter.findUniqueOrThrow({ where: { workshopId: context.workshopId } })).resolves.toMatchObject({ nextNumber: 1004 });
+  });
+
+  it("rejects the second update using the same initial version", async () => {
+    const initial = await workOrderService.get(context, orderId);
+    const updates = await Promise.allSettled([
+      workOrderService.update(context, orderId, { version: initial.version, diagnosis: "Diagnóstico A" }),
+      workOrderService.update(context, orderId, { version: initial.version, diagnosis: "Diagnóstico B" }),
+    ]);
+
+    expect(updates.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const rejected = updates.find((result): result is PromiseRejectedResult => result.status === "rejected");
+    expect(rejected?.reason).toMatchObject({ code: "STALE_WORK_ORDER" });
   });
 
   it("edits quantity and discount with server totals and audit", async () => {
@@ -110,5 +158,24 @@ describe.sequential("professional work order operations", () => {
     await expect(workOrderService.complete(context, orderId, { pickedUpByName: "Ana Teste", accepted: true, paymentStatus: "PAID" })).rejects.toMatchObject({ code: "INVALID_TRANSITION" });
     const detail = await workOrderService.get(context, orderId); expect(detail.activities.some((activity) => activity.actorName === "Operador QA")).toBe(true);
     await expect(workOrderService.get(foreignContext, orderId)).rejects.toMatchObject({ code: "WORK_ORDER_NOT_FOUND" });
+    await expect(workOrderService.update(foreignContext, orderId, { version: detail.version, diagnosis: "Ataque" })).rejects.toMatchObject({ code: "WORK_ORDER_NOT_FOUND" });
+    await expect(workOrderService.cancel(foreignContext, orderId, "Ataque")).rejects.toMatchObject({ code: "WORK_ORDER_NOT_FOUND" });
+    await expect(customerService.get(foreignContext, customerId)).rejects.toMatchObject({ code: "CUSTOMER_NOT_FOUND" });
+    await expect(customerService.update(foreignContext, customerId, { name: "Ataque" })).rejects.toMatchObject({ code: "CUSTOMER_NOT_FOUND" });
+    await expect(customerService.archive(foreignContext, customerId)).rejects.toMatchObject({ code: "CUSTOMER_NOT_FOUND" });
+  });
+
+  it("reverses consumed stock, reserves again and releases on cancellation", async () => {
+    const reopened = await workOrderService.reopenCompleted(context, orderId, "Retorno em garantia");
+    expect(reopened.status).toBe("IN_PROGRESS");
+    let inventory = await inventoryService.get(context, inventoryItemId);
+    expect(Number(inventory.quantity)).toBe(3);
+    expect(Number(inventory.reservedQuantity)).toBe(2);
+    expect((await inventoryService.movements(context, inventoryItemId)).some((movement) => movement.type === "WORK_ORDER_REVERSAL")).toBe(true);
+
+    await workOrderService.cancel(context, orderId, "Serviço encerrado");
+    inventory = await inventoryService.get(context, inventoryItemId);
+    expect(Number(inventory.quantity)).toBe(3);
+    expect(Number(inventory.reservedQuantity)).toBe(0);
   });
 });

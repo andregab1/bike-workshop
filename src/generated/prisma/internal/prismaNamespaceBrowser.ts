@@ -456,6 +456,8 @@ export const WorkOrderScalarFieldEnum = {
   workshopId: 'workshopId',
   bikeId: 'bikeId',
   customerSnapshotId: 'customerSnapshotId',
+  customerSnapshotData: 'customerSnapshotData',
+  bikeSnapshotData: 'bikeSnapshotData',
   number: 'number',
   legacyKey: 'legacyKey',
   status: 'status',

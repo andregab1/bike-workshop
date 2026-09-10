@@ -3,17 +3,10 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import type { RequestContext } from "@/lib/request-context";
 import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/serializable-transaction";
 import { reconcileReservations } from "@/modules/work-orders/services/work-order-service";
 import { requirePermission } from "@/shared/auth/permissions";
 import { DomainError } from "@/shared/http/errors";
-
-async function serializable<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try { return await prisma.$transaction(operation, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }); }
-    catch (error) { if ((error as { code?: string }).code !== "P2034" || attempt === 2) throw error; }
-  }
-  throw new DomainError("Não foi possível concluir o orçamento. Tente novamente.", 409, "CONCURRENT_QUOTE_CHANGE");
-}
 
 async function owned(context: RequestContext, id: string, tx: Prisma.TransactionClient) {
   const order = await tx.workOrder.findFirst({ where: { id, workshopId: context.workshopId }, include: { workshop: { select: { reservationPolicy: true } }, services: true, parts: true } });
@@ -24,17 +17,15 @@ async function owned(context: RequestContext, id: string, tx: Prisma.Transaction
 export const workOrderQuoteService = {
   generate(context: RequestContext, workOrderId: string, input: { validUntil?: string | null; kind: "BASE" | "ADDITIONAL" }) {
     requirePermission(context, "MANAGE_WORK_ORDERS");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, workOrderId, tx);
       if (!["OPEN", "IN_PROGRESS"].includes(order.status)) throw new DomainError("Não é possível gerar orçamento neste estado.", 409, "INVALID_QUOTE_STATE");
       if (!order.services.length && !order.parts.length) throw new DomainError("Adicione serviços ou peças antes de gerar o orçamento.", 400, "EMPTY_QUOTE");
       const sameDraft = await tx.workOrderQuote.findFirst({ where: { workOrderId, status: "DRAFT", sourceWorkOrderVersion: order.version }, orderBy: { version: "desc" } });
       if (sameDraft) return sameDraft;
       await tx.workOrderQuote.updateMany({ where: { workOrderId, status: "DRAFT" }, data: { status: "SUPERSEDED" } });
-      const [version, additional] = await Promise.all([
-        tx.workOrderQuote.aggregate({ where: { workOrderId }, _max: { version: true } }),
-        tx.workOrderQuote.aggregate({ where: { workOrderId, kind: "ADDITIONAL" }, _max: { additionalNumber: true } }),
-      ]);
+      const version = await tx.workOrderQuote.aggregate({ where: { workOrderId }, _max: { version: true } });
+      const additional = await tx.workOrderQuote.aggregate({ where: { workOrderId, kind: "ADDITIONAL" }, _max: { additionalNumber: true } });
       const quote = await tx.workOrderQuote.create({ data: {
         workOrderId,
         version: (version._max.version ?? 0) + 1,
@@ -74,7 +65,7 @@ export const workOrderQuoteService = {
 
   decide(context: RequestContext, workOrderId: string, quoteId: string, decision: "APPROVED" | "REJECTED", input: { channel: "IN_PERSON" | "WHATSAPP" | "PHONE" | "EMAIL" | "OTHER"; approvedByName?: string; evidence?: string; note?: string; serviceLineIds?: string[]; partLineIds?: string[] }) {
     requirePermission(context, "APPROVE_QUOTE");
-    return serializable(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, workOrderId, tx);
       const quote = await tx.workOrderQuote.findFirst({ where: { id: quoteId, workOrderId } });
       if (!quote) throw new DomainError("Orçamento não encontrado nesta OS.", 404, "QUOTE_NOT_FOUND");
@@ -89,8 +80,8 @@ export const workOrderQuoteService = {
       const totalCount = allServiceIds.length + allPartIds.length;
       const result = decision === "REJECTED" || selectedCount === 0 ? "REJECTED" : selectedCount === totalCount ? "APPROVED" : "PARTIALLY_APPROVED";
       const approvedPartSet = new Set(selectedParts);
-      await Promise.all(order.services.map((line) => tx.workOrderServiceLine.update({ where: { id: line.id }, data: { status: selectedServices.includes(line.id) ? "APPROVED" : "REJECTED" } })));
-      await Promise.all(order.parts.map((line) => tx.workOrderPartLine.update({ where: { id: line.id }, data: { status: approvedPartSet.has(line.id) ? "APPROVED" : "REJECTED" } })));
+      for (const line of order.services) await tx.workOrderServiceLine.update({ where: { id: line.id }, data: { status: selectedServices.includes(line.id) ? "APPROVED" : "REJECTED" } });
+      for (const line of order.parts) await tx.workOrderPartLine.update({ where: { id: line.id }, data: { status: approvedPartSet.has(line.id) ? "APPROVED" : "REJECTED" } });
       if (result !== "REJECTED" && order.workshop.reservationPolicy === "ON_QUOTE_APPROVAL") await reconcileReservations(context, order.id, order.number, order.parts.filter((line) => approvedPartSet.has(line.id)), tx);
       if (result === "REJECTED") await reconcileReservations(context, order.id, order.number, [], tx);
       const respondedAt = new Date();

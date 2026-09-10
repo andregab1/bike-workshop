@@ -415,6 +415,7 @@ export type InventoryItemOrderByWithRelationInput = {
 
 export type InventoryItemWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  workshopId_sku?: Prisma.InventoryItemWorkshopIdSkuCompoundUniqueInput
   AND?: Prisma.InventoryItemWhereInput | Prisma.InventoryItemWhereInput[]
   OR?: Prisma.InventoryItemWhereInput[]
   NOT?: Prisma.InventoryItemWhereInput | Prisma.InventoryItemWhereInput[]
@@ -446,7 +447,7 @@ export type InventoryItemWhereUniqueInput = Prisma.AtLeast<{
   movements?: Prisma.InventoryMovementListRelationFilter
   workOrderParts?: Prisma.WorkOrderPartLineListRelationFilter
   reservations?: Prisma.InventoryReservationListRelationFilter
-}, "id">
+}, "id" | "workshopId_sku">
 
 export type InventoryItemOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -697,6 +698,11 @@ export type InventoryItemListRelationFilter = {
 
 export type InventoryItemOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type InventoryItemWorkshopIdSkuCompoundUniqueInput = {
+  workshopId: string
+  sku: string
 }
 
 export type InventoryItemCountOrderByAggregateInput = {

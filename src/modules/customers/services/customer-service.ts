@@ -10,6 +10,19 @@ import type { Prisma } from "@/generated/prisma/client";
 
 type ActiveFilter = boolean | "all";
 
+export function customerSearchFilters(query: string): Prisma.CustomerWhereInput[] {
+  const phone = normalizePhone(query);
+  const email = normalizeEmail(query);
+  const cpfCnpj = normalizeCpfCnpj(query);
+
+  return [
+    { name: { contains: query, mode: "insensitive" } },
+    ...(phone ? [{ normalizedPhone: { contains: phone } } satisfies Prisma.CustomerWhereInput] : []),
+    ...(email ? [{ normalizedEmail: { contains: email } } satisfies Prisma.CustomerWhereInput] : []),
+    ...(cpfCnpj ? [{ normalizedCpfCnpj: { equals: cpfCnpj } } satisfies Prisma.CustomerWhereInput] : []),
+  ];
+}
+
 function identityData(input: { phone: string; email?: string | null; cpfCnpj?: string | null }) {
   return {
     normalizedPhone: normalizePhone(input.phone),
@@ -24,9 +37,7 @@ export const customerService = {
       where: {
         workshopId: context.workshopId,
         ...(active === "all" ? {} : { active }),
-        ...(query
-          ? { OR: [{ name: { contains: query, mode: "insensitive" } }, { phone: { contains: query } }] }
-          : {}),
+        ...(query ? { OR: customerSearchFilters(query) } : {}),
       },
       include: { bikes: { orderBy: { createdAt: "desc" } } },
       orderBy: { name: "asc" },

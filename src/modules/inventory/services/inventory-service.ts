@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import type { RequestContext } from "@/lib/request-context";
 import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/serializable-transaction";
 import { weightedAverageCost } from "@/modules/inventory/inventory-policy";
 import type { CreateCatalogInventoryItemInput, CreateCustomInventoryItemInput, ManualExitInput } from "@/modules/inventory/schemas/inventory";
 import type { z } from "zod";
@@ -23,17 +24,6 @@ type StockEntryDetails = {
   reason?: string;
 };
 
-async function serializableTransaction<T>(operation: (transaction: Prisma.TransactionClient) => Promise<T>) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      return await prisma.$transaction(operation, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    } catch (error) {
-      if ((error as { code?: string }).code !== "P2034" || attempt === 2) throw error;
-    }
-  }
-  throw new Error("Serializable transaction retry exhausted.");
-}
-
 async function findOwned(
   context: RequestContext,
   id: string,
@@ -47,7 +37,7 @@ async function findOwned(
 async function assertActiveBrand(brandId: string | undefined, transaction: Pick<typeof prisma, "brand">) {
   if (!brandId) return;
   if (!await transaction.brand.findFirst({ where: { id: brandId, active: true }, select: { id: true } })) {
-    throw new DomainError("Marca nÃ£o encontrada.", 400, "INVALID_BRAND");
+  throw new DomainError("Marca não encontrada.", 400, "INVALID_BRAND");
   }
 }
 
@@ -110,7 +100,7 @@ export const inventoryService = {
     const usageById = new Map(usageRows.map((item) => [item.id, item]));
     const byId = new Map(rows.map((item) => [item.id, item]));
     const items = ids.flatMap(({ id }) => { const item = byId.get(id); const usage = usageById.get(id); return item ? [{ ...item, physicalQuantity: item.quantity, availableQuantity: item.quantity.minus(item.reservedQuantity), usageCount: Number(usage?.usageCount || 0), unitsUsed: Number(usage?.unitsUsed || 0) }] : []; });
-    const summaryRows = await prisma.$queryRaw<Array<{ registered: bigint; available: Prisma.Decimal; low: bigint; zero: bigint; totalCostCents: Prisma.Decimal; movementsToday: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint registered, COALESCE(SUM(i.quantity-i."reservedQuantity"),0) available, COUNT(*) FILTER (WHERE (i.quantity-i."reservedQuantity")>0 AND (i.quantity-i."reservedQuantity")<=i."minimumQuantity")::bigint low, COUNT(*) FILTER (WHERE (i.quantity-i."reservedQuantity")=0)::bigint zero, COALESCE(SUM(i.quantity*COALESCE(i."costPriceCents",0)),0) "totalCostCents", (SELECT COUNT(*)::bigint FROM "inventory_movements" m WHERE m."workshopId"=${context.workshopId} AND m.type::text NOT IN ('STOCK_RESERVATION', 'RESERVATION_RELEASE') AND (m."createdAt" AT TIME ZONE 'America/Sao_Paulo')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date) "movementsToday" FROM "inventory_items" i WHERE i."workshopId"=${context.workshopId} AND i.active=true`);
+    const summaryRows = await prisma.$queryRaw<Array<{ registered: bigint; available: Prisma.Decimal; low: bigint; zero: bigint; totalCostCents: Prisma.Decimal; movementsToday: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint registered, COALESCE(SUM(i.quantity-i."reservedQuantity"),0) available, COUNT(*) FILTER (WHERE (i.quantity-i."reservedQuantity")>0 AND (i.quantity-i."reservedQuantity")<=i."minimumQuantity")::bigint low, COUNT(*) FILTER (WHERE (i.quantity-i."reservedQuantity")=0)::bigint zero, COALESCE(SUM(i.quantity*COALESCE(i."costPriceCents",0)),0) "totalCostCents", (SELECT COUNT(*)::bigint FROM "inventory_movements" m WHERE m."workshopId"=${context.workshopId} AND m.type::text NOT IN ('STOCK_RESERVATION', 'RESERVATION_RELEASE') AND (m."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date) "movementsToday" FROM "inventory_items" i WHERE i."workshopId"=${context.workshopId} AND i.active=true`);
     const locationRows = await prisma.inventoryItem.findMany({ where: { workshopId: context.workshopId, active: true, location: { not: null } }, distinct: ["location"], select: { location: true }, orderBy: { location: "asc" } });
     const summary = summaryRows[0]!; const total = Number(count[0]?.total || 0);
     return { items, total, page: query.page, size: query.size, pageCount: Math.ceil(total / query.size), locations: locationRows.flatMap((item) => item.location ? [item.location] : []), summary: { registered: Number(summary.registered), available: Number(summary.available), low: Number(summary.low), zero: Number(summary.zero), reorder: Number(summary.low) + Number(summary.zero), totalCostCents: Math.round(Number(summary.totalCostCents)), movementsToday: Number(summary.movementsToday) } };
@@ -125,7 +115,7 @@ export const inventoryService = {
   async update(context: RequestContext, id: string, input: { name?: string; brandId?: string | null; categoryId?: string | null; sku?: string | null; minimumQuantity?: number; location?: string | null; supplierName?: string | null; salePriceCents?: number; notes?: string | null }) {
     requirePermission(context, "ADJUST_STOCK");
     try {
-      return await serializableTransaction(async (transaction) => {
+      return await runSerializableTransaction(async (transaction) => {
         const item = await findOwned(context, id, transaction);
         await assertActiveBrand(input.brandId ?? undefined, transaction);
         if (input.categoryId && !await transaction.partCategory.findUnique({ where: { id: input.categoryId }, select: { id: true } })) throw new DomainError("Categoria não encontrada.", 400, "INVALID_CATEGORY");
@@ -136,12 +126,12 @@ export const inventoryService = {
 
   async deactivate(context: RequestContext, id: string) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => { const item = await findOwned(context, id, transaction); if (item.reservedQuantity.isPositive()) throw new DomainError("Libere as reservas antes de desativar esta peça.", 409, "ACTIVE_RESERVATIONS"); return transaction.inventoryItem.update({ where: { id: item.id }, data: { active: false, version: { increment: 1 } }, include: itemInclude }); });
+    return runSerializableTransaction(async (transaction) => { const item = await findOwned(context, id, transaction); if (item.reservedQuantity.isPositive()) throw new DomainError("Libere as reservas antes de desativar esta peça.", 409, "ACTIVE_RESERVATIONS"); return transaction.inventoryItem.update({ where: { id: item.id }, data: { active: false, version: { increment: 1 } }, include: itemInclude }); });
   },
 
   createCustom(context: RequestContext, input: CreateCustomInventoryItemInput) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => {
+    return runSerializableTransaction(async (transaction) => {
       await assertActiveBrand(input.brandId, transaction);
       const item = await transaction.inventoryItem.create({ data: { workshopId: context.workshopId, customName: input.customName, brandId: input.brandId, categoryId: input.categoryId, quantity: new Prisma.Decimal(input.quantity), minimumQuantity: new Prisma.Decimal(input.minimumQuantity), unitOfMeasure: input.unitOfMeasure, costPriceCents: input.costPriceCents, salePriceCents: input.salePriceCents, location: input.location, sku: input.sku, supplierName: input.supplierName, notes: input.notes }, include: itemInclude });
       if (input.quantity > 0) await transaction.inventoryMovement.create({ data: { workshopId: context.workshopId, inventoryItemId: item.id, type: "STOCK_ENTRY", quantityDelta: new Prisma.Decimal(input.quantity), unitCostCents: input.costPriceCents, supplierName: input.supplierName, purchaseDocument: input.purchaseDocument, purchaseDate: input.purchaseDate ? new Date(`${input.purchaseDate}T00:00:00.000Z`) : undefined, reason: input.reason || "Saldo inicial", originDestination: "Compra / saldo inicial", physicalBefore: 0, physicalAfter: input.quantity, reservedBefore: 0, reservedAfter: 0, createdById: context.userId } });
@@ -152,12 +142,12 @@ export const inventoryService = {
   async createFromCatalog(context: RequestContext, input: CreateCatalogInventoryItemInput) {
     requirePermission(context, "ADJUST_STOCK");
     try {
-      return await serializableTransaction(async (transaction) => {
+      return await runSerializableTransaction(async (transaction) => {
         const catalogPart = await transaction.catalogPart.findFirst({ where: { id: input.catalogPartId, active: true }, select: { id: true, categoryId: true } });
-        if (!catalogPart) throw new DomainError("PeÃ§a nÃ£o encontrada no catÃ¡logo.", 404, "CATALOG_PART_NOT_FOUND");
+        if (!catalogPart) throw new DomainError("Peça não encontrada no catálogo.", 404, "CATALOG_PART_NOT_FOUND");
         await assertActiveBrand(input.brandId, transaction);
         const existing = await transaction.inventoryItem.findFirst({ where: { workshopId: context.workshopId, catalogPartId: input.catalogPartId, brandId: input.brandId ?? null }, select: { id: true } });
-        if (existing) throw new DomainError("Esta peÃ§a jÃ¡ pertence ao estoque da oficina.", 409, "INVENTORY_ITEM_ALREADY_EXISTS");
+        if (existing) throw new DomainError("Esta peça já pertence ao estoque da oficina.", 409, "INVENTORY_ITEM_ALREADY_EXISTS");
         const item = await transaction.inventoryItem.create({
           data: {
             workshopId: context.workshopId,
@@ -178,19 +168,19 @@ export const inventoryService = {
         return transaction.inventoryItem.findUniqueOrThrow({ where: { id: item.id }, include: itemInclude });
       });
     } catch (error) {
-      if ((error as { code?: string }).code === "P2002") throw new DomainError("Esta peÃ§a jÃ¡ pertence ao estoque da oficina.", 409, "INVENTORY_ITEM_ALREADY_EXISTS");
+      if ((error as { code?: string }).code === "P2002") throw new DomainError("Esta peça já pertence ao estoque da oficina.", 409, "INVENTORY_ITEM_ALREADY_EXISTS");
       throw error;
     }
   },
 
   entry(context: RequestContext, id: string, details: StockEntryDetails) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction((transaction) => applyEntry(context, id, details, transaction));
+    return runSerializableTransaction((transaction) => applyEntry(context, id, details, transaction));
   },
 
   physicalCount(context: RequestContext, id: string, countedQuantity: number, reason: string) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => {
+    return runSerializableTransaction(async (transaction) => {
       const item = await findOwned(context, id, transaction); const counted = new Prisma.Decimal(countedQuantity); const delta = counted.minus(item.quantity);
       if (counted.lessThan(item.reservedQuantity)) throw new DomainError("Contagem física não pode ficar abaixo da quantidade reservada.", 409, "RESERVED_STOCK_CONFLICT");
       if (delta.isZero()) return item;
@@ -202,7 +192,7 @@ export const inventoryService = {
 
   manualExit(context: RequestContext, id: string, input: ManualExitInput) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => {
+    return runSerializableTransaction(async (transaction) => {
       const item = await findOwned(context, id, transaction); const delta = new Prisma.Decimal(input.quantity);
       if (item.quantity.minus(item.reservedQuantity).lessThan(delta)) throw new DomainError("Saldo disponível insuficiente para esta saída.", 409, "INSUFFICIENT_AVAILABLE_STOCK");
       const updated = await transaction.inventoryItem.update({ where: { id: item.id }, data: { quantity: { decrement: delta } }, include: itemInclude });
@@ -213,7 +203,7 @@ export const inventoryService = {
 
   batchEntry(context: RequestContext, input: { items: Array<{ inventoryItemId: string; quantity: number; unitCostCents?: number }>; supplierName?: string; purchaseDocument?: string; purchaseDate?: string; reason?: string }) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => {
+    return runSerializableTransaction(async (transaction) => {
       const ids = [...new Set(input.items.map((item) => item.inventoryItemId))];
       if (ids.length !== input.items.length) throw new DomainError("Cada peça deve aparecer uma vez no lote.", 400, "DUPLICATE_BATCH_ITEM");
       const owned = await transaction.inventoryItem.findMany({ where: { id: { in: ids }, workshopId: context.workshopId, active: true }, select: { id: true } });
@@ -227,7 +217,7 @@ export const inventoryService = {
 
   batchPhysicalCount(context: RequestContext, input: { items: Array<{ inventoryItemId: string; countedQuantity: number }>; reason: string }) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => {
+    return runSerializableTransaction(async (transaction) => {
       const ids = [...new Set(input.items.map((item) => item.inventoryItemId))];
       if (ids.length !== input.items.length) throw new DomainError("Cada peça deve aparecer uma vez na contagem.", 400, "DUPLICATE_COUNT_ITEM");
       const current = await transaction.inventoryItem.findMany({ where: { id: { in: ids }, workshopId: context.workshopId, active: true } });
@@ -250,7 +240,7 @@ export const inventoryService = {
 
   reverseMovement(context: RequestContext, movementId: string, reason: string) {
     requirePermission(context, "ADJUST_STOCK");
-    return serializableTransaction(async (transaction) => {
+    return runSerializableTransaction(async (transaction) => {
       const movement = await transaction.inventoryMovement.findFirst({ where: { id: movementId, workshopId: context.workshopId }, include: { inventoryItem: true, reversals: { select: { id: true } } } });
       if (!movement) throw new DomainError("Movimentação não encontrada.", 404, "MOVEMENT_NOT_FOUND");
       if (movement.originalMovementId || movement.reversals.length) throw new DomainError("Esta movimentação já foi estornada ou é um estorno.", 409, "MOVEMENT_ALREADY_REVERSED");

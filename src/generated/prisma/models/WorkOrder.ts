@@ -145,6 +145,8 @@ export type WorkOrderCountAggregateOutputType = {
   workshopId: number
   bikeId: number
   customerSnapshotId: number
+  customerSnapshotData: number
+  bikeSnapshotData: number
   number: number
   legacyKey: number
   status: number
@@ -307,6 +309,8 @@ export type WorkOrderCountAggregateInputType = {
   workshopId?: true
   bikeId?: true
   customerSnapshotId?: true
+  customerSnapshotData?: true
+  bikeSnapshotData?: true
   number?: true
   legacyKey?: true
   status?: true
@@ -440,6 +444,8 @@ export type WorkOrderGroupByOutputType = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData: runtime.JsonValue | null
+  bikeSnapshotData: runtime.JsonValue | null
   number: number
   legacyKey: string | null
   status: $Enums.WorkOrderStatus
@@ -509,6 +515,8 @@ export type WorkOrderWhereInput = {
   workshopId?: Prisma.StringFilter<"WorkOrder"> | string
   bikeId?: Prisma.StringFilter<"WorkOrder"> | string
   customerSnapshotId?: Prisma.StringFilter<"WorkOrder"> | string
+  customerSnapshotData?: Prisma.JsonNullableFilter<"WorkOrder">
+  bikeSnapshotData?: Prisma.JsonNullableFilter<"WorkOrder">
   number?: Prisma.IntFilter<"WorkOrder"> | number
   legacyKey?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
   status?: Prisma.EnumWorkOrderStatusFilter<"WorkOrder"> | $Enums.WorkOrderStatus
@@ -572,6 +580,8 @@ export type WorkOrderOrderByWithRelationInput = {
   workshopId?: Prisma.SortOrder
   bikeId?: Prisma.SortOrder
   customerSnapshotId?: Prisma.SortOrder
+  customerSnapshotData?: Prisma.SortOrderInput | Prisma.SortOrder
+  bikeSnapshotData?: Prisma.SortOrderInput | Prisma.SortOrder
   number?: Prisma.SortOrder
   legacyKey?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -640,6 +650,8 @@ export type WorkOrderWhereUniqueInput = Prisma.AtLeast<{
   workshopId?: Prisma.StringFilter<"WorkOrder"> | string
   bikeId?: Prisma.StringFilter<"WorkOrder"> | string
   customerSnapshotId?: Prisma.StringFilter<"WorkOrder"> | string
+  customerSnapshotData?: Prisma.JsonNullableFilter<"WorkOrder">
+  bikeSnapshotData?: Prisma.JsonNullableFilter<"WorkOrder">
   number?: Prisma.IntFilter<"WorkOrder"> | number
   legacyKey?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
   status?: Prisma.EnumWorkOrderStatusFilter<"WorkOrder"> | $Enums.WorkOrderStatus
@@ -703,6 +715,8 @@ export type WorkOrderOrderByWithAggregationInput = {
   workshopId?: Prisma.SortOrder
   bikeId?: Prisma.SortOrder
   customerSnapshotId?: Prisma.SortOrder
+  customerSnapshotData?: Prisma.SortOrderInput | Prisma.SortOrder
+  bikeSnapshotData?: Prisma.SortOrderInput | Prisma.SortOrder
   number?: Prisma.SortOrder
   legacyKey?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -757,6 +771,8 @@ export type WorkOrderScalarWhereWithAggregatesInput = {
   workshopId?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
   bikeId?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
   customerSnapshotId?: Prisma.StringWithAggregatesFilter<"WorkOrder"> | string
+  customerSnapshotData?: Prisma.JsonNullableWithAggregatesFilter<"WorkOrder">
+  bikeSnapshotData?: Prisma.JsonNullableWithAggregatesFilter<"WorkOrder">
   number?: Prisma.IntWithAggregatesFilter<"WorkOrder"> | number
   legacyKey?: Prisma.StringNullableWithAggregatesFilter<"WorkOrder"> | string | null
   status?: Prisma.EnumWorkOrderStatusWithAggregatesFilter<"WorkOrder"> | $Enums.WorkOrderStatus
@@ -800,6 +816,8 @@ export type WorkOrderScalarWhereWithAggregatesInput = {
 
 export type WorkOrderCreateInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -862,6 +880,8 @@ export type WorkOrderUncheckedCreateInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -918,6 +938,8 @@ export type WorkOrderUncheckedCreateInput = {
 
 export type WorkOrderUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -980,6 +1002,8 @@ export type WorkOrderUncheckedUpdateInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -1039,6 +1063,8 @@ export type WorkOrderCreateManyInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -1082,6 +1108,8 @@ export type WorkOrderCreateManyInput = {
 
 export type WorkOrderUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -1127,6 +1155,8 @@ export type WorkOrderUncheckedUpdateManyInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -1198,6 +1228,8 @@ export type WorkOrderCountOrderByAggregateInput = {
   workshopId?: Prisma.SortOrder
   bikeId?: Prisma.SortOrder
   customerSnapshotId?: Prisma.SortOrder
+  customerSnapshotData?: Prisma.SortOrder
+  bikeSnapshotData?: Prisma.SortOrder
   number?: Prisma.SortOrder
   legacyKey?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -1732,6 +1764,8 @@ export type WorkOrderUpdateOneRequiredWithoutWarrantiesNestedInput = {
 
 export type WorkOrderCreateWithoutAssignedMechanicInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -1793,6 +1827,8 @@ export type WorkOrderUncheckedCreateWithoutAssignedMechanicInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -1880,6 +1916,8 @@ export type WorkOrderScalarWhereInput = {
   workshopId?: Prisma.StringFilter<"WorkOrder"> | string
   bikeId?: Prisma.StringFilter<"WorkOrder"> | string
   customerSnapshotId?: Prisma.StringFilter<"WorkOrder"> | string
+  customerSnapshotData?: Prisma.JsonNullableFilter<"WorkOrder">
+  bikeSnapshotData?: Prisma.JsonNullableFilter<"WorkOrder">
   number?: Prisma.IntFilter<"WorkOrder"> | number
   legacyKey?: Prisma.StringNullableFilter<"WorkOrder"> | string | null
   status?: Prisma.EnumWorkOrderStatusFilter<"WorkOrder"> | $Enums.WorkOrderStatus
@@ -1923,6 +1961,8 @@ export type WorkOrderScalarWhereInput = {
 
 export type WorkOrderCreateWithoutWorkshopInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -1983,6 +2023,8 @@ export type WorkOrderUncheckedCreateWithoutWorkshopInput = {
   id?: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2065,6 +2107,8 @@ export type WorkOrderUpdateManyWithWhereWithoutWorkshopInput = {
 
 export type WorkOrderCreateWithoutInventoryMovementsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2126,6 +2170,8 @@ export type WorkOrderUncheckedCreateWithoutInventoryMovementsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2197,6 +2243,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutInventoryMovementsInput = {
 
 export type WorkOrderUpdateWithoutInventoryMovementsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -2258,6 +2306,8 @@ export type WorkOrderUncheckedUpdateWithoutInventoryMovementsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -2313,6 +2363,8 @@ export type WorkOrderUncheckedUpdateWithoutInventoryMovementsInput = {
 
 export type WorkOrderCreateWithoutCustomerSnapshotInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2373,6 +2425,8 @@ export type WorkOrderUncheckedCreateWithoutCustomerSnapshotInput = {
   id?: string
   workshopId: string
   bikeId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2455,6 +2509,8 @@ export type WorkOrderUpdateManyWithWhereWithoutCustomerSnapshotInput = {
 
 export type WorkOrderCreateWithoutBikeInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2515,6 +2571,8 @@ export type WorkOrderUncheckedCreateWithoutBikeInput = {
   id?: string
   workshopId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2597,6 +2655,8 @@ export type WorkOrderUpdateManyWithWhereWithoutBikeInput = {
 
 export type WorkOrderCreateWithoutServicesInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2658,6 +2718,8 @@ export type WorkOrderUncheckedCreateWithoutServicesInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2729,6 +2791,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutServicesInput = {
 
 export type WorkOrderUpdateWithoutServicesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -2790,6 +2854,8 @@ export type WorkOrderUncheckedUpdateWithoutServicesInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -2845,6 +2911,8 @@ export type WorkOrderUncheckedUpdateWithoutServicesInput = {
 
 export type WorkOrderCreateWithoutPartsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2906,6 +2974,8 @@ export type WorkOrderUncheckedCreateWithoutPartsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -2977,6 +3047,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutPartsInput = {
 
 export type WorkOrderUpdateWithoutPartsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3038,6 +3110,8 @@ export type WorkOrderUncheckedUpdateWithoutPartsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3093,6 +3167,8 @@ export type WorkOrderUncheckedUpdateWithoutPartsInput = {
 
 export type WorkOrderCreateWithoutActivitiesInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3154,6 +3230,8 @@ export type WorkOrderUncheckedCreateWithoutActivitiesInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3225,6 +3303,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutActivitiesInput = {
 
 export type WorkOrderUpdateWithoutActivitiesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3286,6 +3366,8 @@ export type WorkOrderUncheckedUpdateWithoutActivitiesInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3341,6 +3423,8 @@ export type WorkOrderUncheckedUpdateWithoutActivitiesInput = {
 
 export type WorkOrderCreateWithoutChecklistsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3402,6 +3486,8 @@ export type WorkOrderUncheckedCreateWithoutChecklistsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3473,6 +3559,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutChecklistsInput = {
 
 export type WorkOrderUpdateWithoutChecklistsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3534,6 +3622,8 @@ export type WorkOrderUncheckedUpdateWithoutChecklistsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3589,6 +3679,8 @@ export type WorkOrderUncheckedUpdateWithoutChecklistsInput = {
 
 export type WorkOrderCreateWithoutAttachmentsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3650,6 +3742,8 @@ export type WorkOrderUncheckedCreateWithoutAttachmentsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3721,6 +3815,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutAttachmentsInput = {
 
 export type WorkOrderUpdateWithoutAttachmentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3782,6 +3878,8 @@ export type WorkOrderUncheckedUpdateWithoutAttachmentsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -3837,6 +3935,8 @@ export type WorkOrderUncheckedUpdateWithoutAttachmentsInput = {
 
 export type WorkOrderCreateWithoutWorkSessionsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3898,6 +3998,8 @@ export type WorkOrderUncheckedCreateWithoutWorkSessionsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -3969,6 +4071,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutWorkSessionsInput = {
 
 export type WorkOrderUpdateWithoutWorkSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4030,6 +4134,8 @@ export type WorkOrderUncheckedUpdateWithoutWorkSessionsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4085,6 +4191,8 @@ export type WorkOrderUncheckedUpdateWithoutWorkSessionsInput = {
 
 export type WorkOrderCreateWithoutReservationsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4146,6 +4254,8 @@ export type WorkOrderUncheckedCreateWithoutReservationsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4217,6 +4327,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutReservationsInput = {
 
 export type WorkOrderUpdateWithoutReservationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4278,6 +4390,8 @@ export type WorkOrderUncheckedUpdateWithoutReservationsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4333,6 +4447,8 @@ export type WorkOrderUncheckedUpdateWithoutReservationsInput = {
 
 export type WorkOrderCreateWithoutQuotesInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4394,6 +4510,8 @@ export type WorkOrderUncheckedCreateWithoutQuotesInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4465,6 +4583,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutQuotesInput = {
 
 export type WorkOrderUpdateWithoutQuotesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4526,6 +4646,8 @@ export type WorkOrderUncheckedUpdateWithoutQuotesInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4581,6 +4703,8 @@ export type WorkOrderUncheckedUpdateWithoutQuotesInput = {
 
 export type WorkOrderCreateWithoutDocumentsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4642,6 +4766,8 @@ export type WorkOrderUncheckedCreateWithoutDocumentsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4713,6 +4839,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutDocumentsInput = {
 
 export type WorkOrderUpdateWithoutDocumentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4774,6 +4902,8 @@ export type WorkOrderUncheckedUpdateWithoutDocumentsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -4829,6 +4959,8 @@ export type WorkOrderUncheckedUpdateWithoutDocumentsInput = {
 
 export type WorkOrderCreateWithoutCommunicationsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4890,6 +5022,8 @@ export type WorkOrderUncheckedCreateWithoutCommunicationsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -4961,6 +5095,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutCommunicationsInput = {
 
 export type WorkOrderUpdateWithoutCommunicationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5022,6 +5158,8 @@ export type WorkOrderUncheckedUpdateWithoutCommunicationsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5077,6 +5215,8 @@ export type WorkOrderUncheckedUpdateWithoutCommunicationsInput = {
 
 export type WorkOrderCreateWithoutPickupsInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -5138,6 +5278,8 @@ export type WorkOrderUncheckedCreateWithoutPickupsInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -5209,6 +5351,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutPickupsInput = {
 
 export type WorkOrderUpdateWithoutPickupsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5270,6 +5414,8 @@ export type WorkOrderUncheckedUpdateWithoutPickupsInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5325,6 +5471,8 @@ export type WorkOrderUncheckedUpdateWithoutPickupsInput = {
 
 export type WorkOrderCreateWithoutWarrantiesInput = {
   id?: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -5386,6 +5534,8 @@ export type WorkOrderUncheckedCreateWithoutWarrantiesInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -5457,6 +5607,8 @@ export type WorkOrderUpdateToOneWithWhereWithoutWarrantiesInput = {
 
 export type WorkOrderUpdateWithoutWarrantiesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5518,6 +5670,8 @@ export type WorkOrderUncheckedUpdateWithoutWarrantiesInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5576,6 +5730,8 @@ export type WorkOrderCreateManyAssignedMechanicInput = {
   workshopId: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -5618,6 +5774,8 @@ export type WorkOrderCreateManyAssignedMechanicInput = {
 
 export type WorkOrderUpdateWithoutAssignedMechanicInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5679,6 +5837,8 @@ export type WorkOrderUncheckedUpdateWithoutAssignedMechanicInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5737,6 +5897,8 @@ export type WorkOrderUncheckedUpdateManyWithoutAssignedMechanicInput = {
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5781,6 +5943,8 @@ export type WorkOrderCreateManyWorkshopInput = {
   id?: string
   bikeId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -5824,6 +5988,8 @@ export type WorkOrderCreateManyWorkshopInput = {
 
 export type WorkOrderUpdateWithoutWorkshopInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5884,6 +6050,8 @@ export type WorkOrderUncheckedUpdateWithoutWorkshopInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5942,6 +6110,8 @@ export type WorkOrderUncheckedUpdateManyWithoutWorkshopInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -5987,6 +6157,8 @@ export type WorkOrderCreateManyCustomerSnapshotInput = {
   id?: string
   workshopId: string
   bikeId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -6030,6 +6202,8 @@ export type WorkOrderCreateManyCustomerSnapshotInput = {
 
 export type WorkOrderUpdateWithoutCustomerSnapshotInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -6090,6 +6264,8 @@ export type WorkOrderUncheckedUpdateWithoutCustomerSnapshotInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -6148,6 +6324,8 @@ export type WorkOrderUncheckedUpdateManyWithoutCustomerSnapshotInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   bikeId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -6193,6 +6371,8 @@ export type WorkOrderCreateManyBikeInput = {
   id?: string
   workshopId: string
   customerSnapshotId: string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number: number
   legacyKey?: string | null
   status?: $Enums.WorkOrderStatus
@@ -6236,6 +6416,8 @@ export type WorkOrderCreateManyBikeInput = {
 
 export type WorkOrderUpdateWithoutBikeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -6296,6 +6478,8 @@ export type WorkOrderUncheckedUpdateWithoutBikeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -6354,6 +6538,8 @@ export type WorkOrderUncheckedUpdateManyWithoutBikeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   workshopId?: Prisma.StringFieldUpdateOperationsInput | string
   customerSnapshotId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  bikeSnapshotData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   number?: Prisma.IntFieldUpdateOperationsInput | number
   legacyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkOrderStatusFieldUpdateOperationsInput | $Enums.WorkOrderStatus
@@ -6539,6 +6725,8 @@ export type WorkOrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   workshopId?: boolean
   bikeId?: boolean
   customerSnapshotId?: boolean
+  customerSnapshotData?: boolean
+  bikeSnapshotData?: boolean
   number?: boolean
   legacyKey?: boolean
   status?: boolean
@@ -6603,6 +6791,8 @@ export type WorkOrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   workshopId?: boolean
   bikeId?: boolean
   customerSnapshotId?: boolean
+  customerSnapshotData?: boolean
+  bikeSnapshotData?: boolean
   number?: boolean
   legacyKey?: boolean
   status?: boolean
@@ -6653,6 +6843,8 @@ export type WorkOrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   workshopId?: boolean
   bikeId?: boolean
   customerSnapshotId?: boolean
+  customerSnapshotData?: boolean
+  bikeSnapshotData?: boolean
   number?: boolean
   legacyKey?: boolean
   status?: boolean
@@ -6703,6 +6895,8 @@ export type WorkOrderSelectScalar = {
   workshopId?: boolean
   bikeId?: boolean
   customerSnapshotId?: boolean
+  customerSnapshotData?: boolean
+  bikeSnapshotData?: boolean
   number?: boolean
   legacyKey?: boolean
   status?: boolean
@@ -6744,7 +6938,7 @@ export type WorkOrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type WorkOrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workshopId" | "bikeId" | "customerSnapshotId" | "number" | "legacyKey" | "status" | "priority" | "complaint" | "internalNotes" | "diagnosis" | "technicalRecommendations" | "technicalNotes" | "expectedDate" | "expectedNote" | "checklistSnapshot" | "laborSubtotalCents" | "partsSubtotalCents" | "totalCents" | "stockConsumed" | "version" | "assignedMechanicName" | "assignedMechanicId" | "approvalStatus" | "approvalNote" | "approvalDecidedAt" | "approvalDecidedBy" | "createdById" | "startedAt" | "diagnosisStartedAt" | "approvalRequestedAt" | "executionPausedAt" | "readyAt" | "completedAt" | "cancelledAt" | "generalDiscountCents" | "generalDiscountType" | "generalDiscountValue" | "generalSurchargeCents" | "paymentStatus" | "paidAmountCents" | "createdAt" | "updatedAt", ExtArgs["result"]["workOrder"]>
+export type WorkOrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workshopId" | "bikeId" | "customerSnapshotId" | "customerSnapshotData" | "bikeSnapshotData" | "number" | "legacyKey" | "status" | "priority" | "complaint" | "internalNotes" | "diagnosis" | "technicalRecommendations" | "technicalNotes" | "expectedDate" | "expectedNote" | "checklistSnapshot" | "laborSubtotalCents" | "partsSubtotalCents" | "totalCents" | "stockConsumed" | "version" | "assignedMechanicName" | "assignedMechanicId" | "approvalStatus" | "approvalNote" | "approvalDecidedAt" | "approvalDecidedBy" | "createdById" | "startedAt" | "diagnosisStartedAt" | "approvalRequestedAt" | "executionPausedAt" | "readyAt" | "completedAt" | "cancelledAt" | "generalDiscountCents" | "generalDiscountType" | "generalDiscountValue" | "generalSurchargeCents" | "paymentStatus" | "paidAmountCents" | "createdAt" | "updatedAt", ExtArgs["result"]["workOrder"]>
 export type WorkOrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>
   bike?: boolean | Prisma.BikeDefaultArgs<ExtArgs>
@@ -6804,6 +6998,8 @@ export type $WorkOrderPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     workshopId: string
     bikeId: string
     customerSnapshotId: string
+    customerSnapshotData: runtime.JsonValue | null
+    bikeSnapshotData: runtime.JsonValue | null
     number: number
     legacyKey: string | null
     status: $Enums.WorkOrderStatus
@@ -7287,6 +7483,8 @@ export interface WorkOrderFieldRefs {
   readonly workshopId: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly bikeId: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly customerSnapshotId: Prisma.FieldRef<"WorkOrder", 'String'>
+  readonly customerSnapshotData: Prisma.FieldRef<"WorkOrder", 'Json'>
+  readonly bikeSnapshotData: Prisma.FieldRef<"WorkOrder", 'Json'>
   readonly number: Prisma.FieldRef<"WorkOrder", 'Int'>
   readonly legacyKey: Prisma.FieldRef<"WorkOrder", 'String'>
   readonly status: Prisma.FieldRef<"WorkOrder", 'WorkOrderStatus'>

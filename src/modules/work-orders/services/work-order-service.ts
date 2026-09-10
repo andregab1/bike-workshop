@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import type { RequestContext } from "@/lib/request-context";
 import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/serializable-transaction";
 import { workOrderListQuerySchema } from "@/modules/work-orders/schemas/work-order";
 import type { CreateWorkOrderInput, UpdateWorkOrderInput } from "@/modules/work-orders/schemas/work-order";
 import type { z } from "zod";
@@ -10,20 +11,11 @@ import { DomainError } from "@/shared/http/errors";
 import { requirePermission } from "@/shared/auth/permissions";
 import { workOrderSensitiveChanges } from "@/modules/work-orders/work-order-pricing-policy";
 import { blockingPendingsFor, calculateWorkOrderPendings, canRunWorkOrderCommand } from "@/modules/work-orders/work-order-rules";
+import { takeNextWorkOrderNumber } from "@/modules/work-orders/work-order-number";
+import { createBikeSnapshot, createCustomerSnapshot } from "@/modules/work-orders/work-order-snapshots";
 
 const include = { workshop: { select: { name: true, slug: true, phone: true, email: true, reservationPolicy: true, requirePaymentBeforeCompletion: true } }, bike: { include: { customer: true } }, customerSnapshot: true, assignedMechanic: { include: { user: { select: { name: true } } } }, services: true, parts: { include: { inventoryItem: { include: { brand: true, category: true, catalogPart: { include: { brand: true, category: true } } } } } }, reservations: true, quotes: { include: { approvals: true }, orderBy: { version: "desc" as const } }, checklists: { include: { items: { orderBy: { sortOrder: "asc" as const } } }, orderBy: { createdAt: "asc" as const } }, attachments: { orderBy: { createdAt: "desc" as const } }, workSessions: { orderBy: { startedAt: "desc" as const } }, activities: { orderBy: { createdAt: "desc" as const } } } as const;
 const editable = ["OPEN", "IN_PROGRESS"] as const;
-
-async function serializableTransaction<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      return await prisma.$transaction(operation, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    } catch (error) {
-      if ((error as { code?: string }).code !== "P2034" || attempt === 2) throw error;
-    }
-  }
-  throw new Error("Serializable transaction retry exhausted.");
-}
 
 function lineTotal(line: { quantity: number; unitPriceCents: number; discountCents?: number; surchargeCents?: number }) { return Math.max(0, Math.round(line.quantity * line.unitPriceCents) - (line.discountCents || 0) + (line.surchargeCents || 0)); }
 function totals(services: CreateWorkOrderInput["services"], parts: CreateWorkOrderInput["parts"]) {
@@ -123,7 +115,7 @@ export const workOrderService = {
     const numeric = /^#?(\d+)$/.exec(query.search || "");
     const where: Prisma.WorkOrderWhereInput = { workshopId: context.workshopId, ...(query.includeRejected === "true" ? {} : { approvalStatus: { not: "REJECTED" } }), ...(query.status ? { status: query.status } : {}), ...(query.mechanicId ? { assignedMechanicId: query.mechanicId } : {}), ...(query.late === "true" ? { expectedDate: { lt: new Date() }, status: { in: ["OPEN", "IN_PROGRESS"] } } : {}), ...(query.search ? { OR: [...(numeric ? [{ number: Number(numeric[1]) }] : []), { bike: { is: { OR: [{ brand: { contains: query.search, mode: "insensitive" } }, { model: { contains: query.search, mode: "insensitive" } }, { serialNumber: { contains: query.search, mode: "insensitive" } }, { customer: { is: { OR: [{ name: { contains: query.search, mode: "insensitive" } }, { phone: { contains: query.search } }] } } }] } } }] } : {}) };
     const orderBy: Prisma.WorkOrderOrderByWithRelationInput = query.sort === "number_asc" ? { number: "asc" } : query.sort === "updated_desc" ? { updatedAt: "desc" } : query.sort === "expected_asc" ? { expectedDate: { sort: "asc", nulls: "last" } } : { number: "desc" };
-    const [items, total] = await prisma.$transaction([prisma.workOrder.findMany({ where, select: { id: true, number: true, version: true, status: true, complaint: true, expectedDate: true, expectedNote: true, laborSubtotalCents: true, partsSubtotalCents: true, totalCents: true, assignedMechanicId: true, assignedMechanicName: true, approvalStatus: true, bikeId: true, customerSnapshotId: true, bike: { include: { customer: true } }, customerSnapshot: true, workshop: { select: { name: true, slug: true } } }, orderBy, skip: (query.page - 1) * query.pageSize, take: query.pageSize }), prisma.workOrder.count({ where })]);
+    const [items, total] = await prisma.$transaction([prisma.workOrder.findMany({ where, select: { id: true, number: true, version: true, status: true, complaint: true, expectedDate: true, expectedNote: true, laborSubtotalCents: true, partsSubtotalCents: true, totalCents: true, assignedMechanicId: true, assignedMechanicName: true, approvalStatus: true, bikeId: true, customerSnapshotId: true, customerSnapshotData: true, bikeSnapshotData: true, bike: { include: { customer: true } }, customerSnapshot: true, workshop: { select: { name: true, slug: true } } }, orderBy, skip: (query.page - 1) * query.pageSize, take: query.pageSize }), prisma.workOrder.count({ where })]);
     return { items, page: query.page, pageSize: query.pageSize, total, pageCount: Math.ceil(total / query.pageSize) };
   },
   async get(context: RequestContext, id: string) {
@@ -145,21 +137,18 @@ export const workOrderService = {
 
   create(context: RequestContext, input: CreateWorkOrderInput) {
     if (input.services.some((line) => line.discountCents > 0) || input.parts.some((line) => line.discountCents > 0)) requirePermission(context, "APPLY_DISCOUNT");
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       await assertReferences(context, input.bikeId, input.services, input.parts, tx);
-      const bike = await tx.bike.findFirstOrThrow({ where: { id: input.bikeId, workshopId: context.workshopId, active: true, customer: { active: true } }, select: { customerId: true } });
-      const highest = await tx.workOrder.aggregate({ where: { workshopId: context.workshopId }, _max: { number: true } });
-      const start = Math.max(1001, (highest._max.number || 1000) + 1);
-      await tx.workOrderCounter.upsert({ where: { workshopId: context.workshopId }, create: { workshopId: context.workshopId, nextNumber: start + 1 }, update: { nextNumber: start + 1 } });
-      const number = start;
+      const bike = await tx.bike.findFirstOrThrow({ where: { id: input.bikeId, workshopId: context.workshopId, active: true, customer: { active: true } }, select: { customerId: true, brand: true, model: true, year: true, type: true, wheelSize: true, frameSize: true, color: true, serialNumber: true, notes: true, customer: { select: { name: true, phone: true, email: true, cpfCnpj: true } } } });
+      const number = await takeNextWorkOrderNumber(tx, context.workshopId);
       const computed = totals(input.services, input.parts);
       const rows = await serviceRows(input.services, tx);
-      return tx.workOrder.create({ data: { workshopId: context.workshopId, bikeId: input.bikeId, customerSnapshotId: bike.customerId, number, status: "OPEN", complaint: input.complaint, diagnosis: input.diagnosis, expectedDate: databaseDate(input.expectedDate), expectedNote: input.expectedNote, checklistSnapshot: input.checklist === null ? Prisma.JsonNull : input.checklist, createdById: context.userId, ...computed, services: { create: rows }, parts: { create: partRows(input.parts) }, activities: { create: { type: "CREATED", title: "Ordem de serviço criada", description: "Registrada como aberta.", createdById: context.userId } } }, include });
+      return tx.workOrder.create({ data: { workshopId: context.workshopId, bikeId: input.bikeId, customerSnapshotId: bike.customerId, customerSnapshotData: createCustomerSnapshot(bike.customer), bikeSnapshotData: createBikeSnapshot(bike), number, status: "OPEN", complaint: input.complaint, diagnosis: input.diagnosis, expectedDate: databaseDate(input.expectedDate), expectedNote: input.expectedNote, checklistSnapshot: input.checklist === null ? Prisma.JsonNull : input.checklist, createdById: context.userId, ...computed, services: { create: rows }, parts: { create: partRows(input.parts) }, activities: { create: { type: "CREATED", title: "Ordem de serviço criada", description: "Registrada como aberta.", createdById: context.userId } } }, include });
     });
   },
 
   update(context: RequestContext, id: string, input: UpdateWorkOrderInput) {
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, id, tx); if (!editable.includes(order.status as typeof editable[number])) throw new DomainError("Esta OS não pode mais ser editada.", 409, "WORK_ORDER_LOCKED");
       if (input.version !== order.version) throw new DomainError("Esta OS foi alterada em outra ação. Recarregue os dados antes de salvar novamente.", 409, "STALE_WORK_ORDER");
       const services = input.services ?? order.services.map((line) => ({ serviceCatalogItemId: line.serviceCatalogItemId || undefined, name: line.nameSnapshot, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, discountCents: line.discountCents, surchargeCents: line.surchargeCents, performedById: line.performedById || undefined }));
@@ -200,7 +189,7 @@ export const workOrderService = {
   },
 
   decideQuote(context: RequestContext, id: string, decision: "APPROVED" | "REJECTED", details: { note?: string; channel: "IN_PERSON" | "WHATSAPP" | "PHONE" | "EMAIL" | "OTHER"; approvedByName?: string; evidence?: string; validUntil?: string | null }) {
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, id, tx); if (!["OPEN", "IN_PROGRESS"].includes(order.status)) throw new DomainError("O orçamento só pode ser decidido enquanto a OS está aberta ou em serviço.", 409, "INVALID_QUOTE_STATE");
       if (decision === "APPROVED" && !order.services.length && !order.parts.length) throw new DomainError("Adicione serviços ou peças antes de aprovar o orçamento.", 400, "EMPTY_QUOTE");
       const latest = await tx.workOrderQuote.aggregate({ where: { workOrderId: id }, _max: { version: true } });
@@ -227,7 +216,7 @@ export const workOrderService = {
 
   cancel(context: RequestContext, id: string, reason: string) {
     requirePermission(context, "CANCEL_WORK_ORDER");
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, id, tx);
       if (order.status === "CANCELLED") return order;
       if (order.status === "COMPLETED") throw new DomainError("Uma OS concluída não pode ser cancelada.", 409, "INVALID_TRANSITION");
@@ -240,7 +229,7 @@ export const workOrderService = {
 
   complete(context: RequestContext, id: string, input: { pickedUpByName: string; documentNumber?: string; relationship?: string; notes?: string; accepted: true; paymentStatus: "PENDING" | "PAID" | "WAIVED" }) {
     requirePermission(context, "COMPLETE_WORK_ORDER");
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, id, tx);
       if (order.status !== "READY") throw new DomainError("A OS precisa estar pronta.", 409, "INVALID_TRANSITION");
       if (order.workshop.requirePaymentBeforeCompletion && !["PAID", "WAIVED"].includes(input.paymentStatus)) throw new DomainError("Confirme o pagamento antes de concluir.", 409, "PAYMENT_REQUIRED");
@@ -255,7 +244,7 @@ export const workOrderService = {
 
   reopenCompleted(context: RequestContext, id: string, reason: string) {
     requirePermission(context, "REOPEN_COMPLETED_ORDER");
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, id, tx);
       if (order.status !== "COMPLETED" || !order.stockConsumed) throw new DomainError("A OS precisa estar concluída com estoque consumido.", 409, "INVALID_TRANSITION");
       await reverseOutstandingStock(context, order, tx, `Reabertura pós-entrega da OS #${order.number}: ${reason}`);
@@ -266,7 +255,7 @@ export const workOrderService = {
   },
 
   transition(context: RequestContext, id: string, action: "start" | "ready" | "reopen" | "complete") {
-    return serializableTransaction(async (tx) => {
+    return runSerializableTransaction(async (tx) => {
       const order = await owned(context, id, tx);
       if (action === "start") {
         if (!canRunWorkOrderCommand(order.status, "start")) throw new DomainError("A OS não pode iniciar neste estado.", 409, "INVALID_TRANSITION");
